@@ -71,6 +71,16 @@
   margin-bottom: 12px;
 }
 
+.error-message {
+  background: #fff0f0;
+  color: #e53e3e;
+  border: 1px solid #feb2b2;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
 .page-description {
   font-size: 18px;
   color: var(--text-medium);

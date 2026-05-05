@@ -3,6 +3,17 @@ import './CreateAccount.css';
 import { Link } from 'react-router-dom';
 import { signUp, getAuthErrorMessage } from "./services/AuthService";
 
+const ALLOWED_DOMAINS = [
+  'gmail.com', 'hotmail.com', 'outlook.com',
+  'yahoo.com', 'ksu.edu.sa', 'icloud.com',
+  'live.com', 'msn.com', 'protonmail.com'
+];
+
+const isValidEmail = (email) => {
+  const domain = email.split('@')[1];
+  return ALLOWED_DOMAINS.includes(domain?.toLowerCase());
+};
+
 export default function CreateAccount() {
   const [formData, setFormData] = useState({
     fullName: '',
@@ -15,13 +26,21 @@ export default function CreateAccount() {
   const [verificationSent, setVerificationSent] = useState(false);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
+  const { name, value } = e.target;
+  setFormData(prev => ({ ...prev, [name]: value }));
+  if (name === 'email') setError('');
+  if (name === 'password') setError('');
+  if (name === 'confirmPassword') setError('');
+};
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    if (!isValidEmail(formData.email)) {
+      setError('Invalid email format');
+      return;
+    }
 
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match!');
@@ -86,12 +105,12 @@ export default function CreateAccount() {
           </div>
 
           {error && (
-            <div className="error-message">❌ {error}</div>
+            <div className="error-message"> {error}</div>
           )}
 
           <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label className="form-label">Full Name *</label>
+              <label className="form-label"> Name *</label>
               <input
                 type="text"
                 name="fullName"

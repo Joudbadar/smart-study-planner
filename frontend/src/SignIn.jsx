@@ -3,6 +3,17 @@ import { Link, useNavigate } from 'react-router-dom';
 import './SignIn.css';
 import { signIn, getAuthErrorMessage } from "./services/AuthService";
 
+const ALLOWED_DOMAINS = [
+  'gmail.com', 'hotmail.com', 'outlook.com',
+  'yahoo.com', 'ksu.edu.sa', 'icloud.com',
+  'live.com', 'msn.com', 'protonmail.com'
+];
+
+const isValidEmail = (email) => {
+  const domain = email.split('@')[1];
+  return ALLOWED_DOMAINS.includes(domain?.toLowerCase());
+};
+
 export default function SignIn() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
@@ -13,6 +24,12 @@ export default function SignIn() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    if (!isValidEmail(email)) {
+      setError('Invalid email format');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -34,7 +51,7 @@ export default function SignIn() {
         <p className="auth-subtitle">Welcome Back</p>
 
         {error && (
-          <div className="error-message">❌ {error}</div>
+          <div className="error-message">{error}</div>
         )}
 
         <form onSubmit={handleSubmit} className="auth-form">
@@ -44,11 +61,11 @@ export default function SignIn() {
             </label>
             <input
               id="email"
-              type="email"
+              type="text"
               className="form-input"
               placeholder="Enter your email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => { setEmail(e.target.value); setError(''); }}
               required
             />
           </div>
@@ -63,7 +80,7 @@ export default function SignIn() {
               className="form-input"
               placeholder="Enter your password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => { setPassword(e.target.value); setError(''); }}
               required
             />
           </div>
