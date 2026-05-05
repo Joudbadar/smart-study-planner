@@ -1,0 +1,97 @@
+.wa-page {
+  padding: 2rem;
+}
+
+.wa-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #2d2d2d;
+  margin-bottom: 0.5rem;
+}
+
+.wa-subtitle {
+  color: #7a7a7a;
+  margin-bottom: 2rem;
+}
+
+.wa-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.wa-card {
+  background: white;
+  border-radius: 16px;
+  padding: 1.4rem 1rem;
+  text-align: center;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+  border: 2px solid transparent;
+  transition: 0.3s ease;
+  cursor: pointer;
+}
+
+.wa-card:hover {
+  transform: translateY(-4px);
+}
+
+.wa-available {
+  background: #eef8e9;
+  border-color: #9ac47b;
+}
+
+.wa-unavailable {
+  background: #f3f3f3;
+  border-color: #cfcfcf;
+}
+
+.wa-day {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #2d2d2d;
+  margin-bottom: 0.5rem;
+}
+
+.wa-time {
+  font-size: 1rem;
+  color: #666;
+  margin-bottom: 0.7rem;
+}
+
+.wa-status {
+  display: inline-block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 20px;
+}
+
+.available-text {
+  background: #dff2d8;
+  color: #2e7d32;
+}
+
+.unavailable-text {
+  background: #e0e0e0;
+  color: #666;
+}
+
+.wa-actions {
+  margin-top: 2rem;
+}
+
+.wa-btn {
+  padding: 0.9rem 1.6rem;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #e67a5f, #ee9b85);
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(230,122,95,0.25);
+}
+
+.wa-btn:hover {
+  transform: translateY(-2px);
+}

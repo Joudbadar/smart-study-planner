@@ -1,0 +1,66 @@
+.sp-page {
+  padding: 2rem;
+}
+
+.sp-generate-btn {
+  width: 100%;
+  border: none;
+  border-radius: 14px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  background: linear-gradient(135deg, #e67a5f, #ee9b85);
+  color: white;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(230,122,95,0.25);
+}
+
+.sp-generate-btn:hover {
+  transform: translateY(-2px);
+}
+
+.sp-card {
+  background: #fffaf7;
+  border-radius: 18px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+}
+
+.sp-heading {
+  font-size: 1.7rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.sp-note {
+  color: #777;
+  margin-bottom: 1rem;
+}
+
+.sp-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.sp-session {
+  background: white;
+  border-left: 5px solid #e67a5f;
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.sp-session-day {
+  font-weight: 700;
+  margin-bottom: 0.3rem;
+}
+
+.sp-session-course {
+  color: #e67a5f;
+  font-weight: 600;
+}
+
+.sp-session-task {
+  color: #666;
+}

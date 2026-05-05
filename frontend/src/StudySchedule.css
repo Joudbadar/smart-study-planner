@@ -1,0 +1,190 @@
+* {
+  box-sizing: border-box;
+}
+
+.study-schedule-wrapper {
+  padding: 20px;
+  max-width: 1300px;
+  margin: 0 auto;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.schedule-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.schedule-title {
+  font-size: 24px;
+  color: #2d2d2d;
+}
+
+.add-session-button {
+  background: linear-gradient(135deg, #e67a5f, #ee9b85);
+  color: white;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.3s;
+}
+
+.add-session-button:hover {
+  opacity: 0.9;
+}
+
+/* Statistics */
+.statistics-container {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.statistic-card {
+  background: white;
+  padding: 16px 24px;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+  transition: transform 0.3s;
+  flex: 1;
+  min-width: 100px;
+}
+
+.statistic-card:hover {
+  transform: translateY(-5px);
+}
+
+.statistic-number {
+  font-size: 28px;
+  font-weight: 800;
+  color: #e67a5f;
+}
+
+.statistic-label {
+  font-size: 13px;
+  color: #888;
+}
+
+/* Weekly grid */
+.weekly-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 10px;
+  overflow-x: auto;
+  flex: 1;
+  min-height: 0;
+  min-width: 700px;
+}
+
+/* Day column */
+.calendar-day-column {
+  background: white;
+  border-radius: 10px;
+  padding: 10px;
+  min-width: 120px;
+}
+
+.day-column-header {
+  font-weight: 700;
+  text-align: center;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #f0e0d8;
+  margin-bottom: 10px;
+}
+
+.day-sessions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Session card */
+.study-session-item {
+  background: #fef6f4;
+  border-radius: 8px;
+  padding: 8px;
+  border-left: 3px solid #e67a5f;
+  word-break: break-word;
+}
+
+.study-session-item.session-completed {
+  opacity: 0.5;
+  border-left-color: #4caf50;
+}
+
+.session-time {
+  font-size: 10px;
+  font-weight: 600;
+  color: #e67a5f;
+}
+
+.session-course {
+  font-weight: 700;
+  font-size: 12px;
+  margin: 3px 0;
+}
+
+.session-task {
+  font-size: 10px;
+  color: #666;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.session-actions {
+  display: flex;
+  gap: 5px;
+  margin-top: 5px;
+}
+
+.complete-session-button,
+.delete-session-button {
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 11px;
+  transition: transform 0.2s;
+}
+
+.complete-session-button:hover,
+.delete-session-button:hover {
+  transform: scale(1.05);
+}
+
+.complete-session-button {
+  background: #e8f5e9;
+  color: #4caf50;
+}
+
+.delete-session-button {
+  background: #ffebee;
+  color: #f44336;
+}
+
+/* Responsive */
+@media (max-width: 800px) {
+  .weekly-calendar-grid {
+    grid-template-columns: repeat(4, 1fr);
+    min-width: auto;
+  }
+  .statistics-container {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 500px) {
+  .weekly-calendar-grid {
+    grid-template-columns: 1fr;
+  }
+}

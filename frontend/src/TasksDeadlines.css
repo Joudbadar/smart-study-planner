@@ -1,0 +1,210 @@
+/* Main wrapper */
+.tasks-deadlines-wrapper {
+  padding: 20px;
+  max-width: 1000px;
+  margin: 0 auto;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.tasks-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.tasks-title {
+  font-size: 24px;
+  color: #2d2d2d;
+}
+
+.add-task-button {
+  background: #ff9800;
+  color: white;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.3s;
+}
+
+.add-task-button:hover {
+  opacity: 0.9;
+}
+
+/* Statistics cards */
+.statistics-cards-container {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.statistic-card-item {
+  background: white;
+  padding: 16px 24px;
+  border-radius: 12px;
+  text-align: center;
+  flex: 1;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+  transition: transform 0.3s;
+}
+
+.statistic-card-item:hover {
+  transform: translateY(-5px);
+}
+
+.statistic-number {
+  font-size: 28px;
+  font-weight: 800;
+  color: #ff9800;
+}
+
+.statistic-label-text {
+  font-size: 13px;
+  color: #888;
+}
+
+/* Filter buttons */
+.filter-buttons-container {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.filter-button {
+  background: #ffd1c4;
+  border: 1px solid #ddd;
+  padding: 5px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.3s;
+}
+
+.filter-button.active,
+.filter-button:hover {
+  background: #ff9800;
+  color: white;
+  border: none;
+}
+
+/* Task cards */
+.deadlines-list-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 24px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.deadline-task-card {
+  background: white;
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  border-left: 4px solid;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+  transition: transform 0.3s;
+}
+
+.deadline-task-card:hover {
+  transform: translateY(-3px);
+}
+
+/* Priority border colors */
+.deadline-task-card.high { border-left-color: #f44336; }
+.deadline-task-card.medium { border-left-color: #ff9800; }
+.deadline-task-card.low { border-left-color: #4caf50; }
+.deadline-task-card.task-completed { opacity: 0.5; }
+
+/* Priority badges */
+.priority-badge {
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 60px;
+  text-align: center;
+}
+
+.priority-badge.high { background: #ffebee; color: #f44336; }
+.priority-badge.medium { background: #fff3e0; color: #ff9800; }
+.priority-badge.low { background: #e8f5e9; color: #4caf50; }
+
+/* Task info */
+.task-info-section { flex: 1; }
+.task-title { font-weight: 700; font-size: 14px; }
+.task-course-name { font-size: 12px; color: #666; margin: 3px 0; }
+.task-due-date { font-size: 11px; color: #999; }
+
+/* Action buttons */
+.task-action-buttons { display: flex; gap: 6px; }
+
+.complete-task-button,
+.edit-task-button,
+.delete-task-button {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: transform 0.2s;
+}
+
+.complete-task-button:hover,
+.edit-task-button:hover,
+.delete-task-button:hover {
+  transform: scale(1.05);
+}
+
+.complete-task-button { background: #e8f5e9; color: #4caf50; }
+.edit-task-button { background: #fff3e0; color: #ff9800; }
+.delete-task-button { background: #ffebee; color: #f44336; }
+
+/* Mini calendar */
+.td-mini-calendar {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.td-cal-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  font-weight: 700;
+}
+
+.td-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 5px;
+  text-align: center;
+}
+
+.td-cal-grid div { padding: 6px; font-size: 12px; }
+.td-deadline-day { background: #ffebee; color: #f44336; border-radius: 50%; }
+
+/* Responsive */
+@media (max-width: 700px) {
+  .statistics-cards-container { flex-direction: column; }
+  .deadline-task-card { flex-direction: column; align-items: flex-start; }
+  .task-action-buttons { align-self: flex-end; }
+  .filter-buttons-container { justify-content: center; }
+}
+
+@media (max-width: 480px) {
+  .tasks-deadlines-wrapper { padding: 10px; }
+  .tasks-header { flex-direction: column; gap: 10px; }
+  .task-title { font-size: 13px; }
+}

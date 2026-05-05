@@ -1,0 +1,239 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+
+.app-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 42px;
+  font-weight: 800px;
+  background: linear-gradient(135deg, var(--text-dark) 0%, var(--coral-primary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 12px;
+  text-align: center ;
+}
+
+.auth-container {
+   min-height: 100vh;
+  width: 100vw;
+  margin: 0;
+  padding: 0; 
+  background: linear-gradient(135deg, var(--cream) 0%, var(--coral-bg) 100%);
+  font-family: 'DM Sans', sans-serif;
+  color: var(--text-dark);
+  display: flex;
+  align-items: flex-start; 
+  justify-content: center;
+  position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  padding-top: 20px;
+  flex-direction: column;
+  align-items: center;
+  
+}
+
+.auth-card {
+  background: white;
+  border-radius: 24px;
+  padding: 60px 50px 80px 50px; 
+  max-width: 520px;
+  width: 100%;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+  position: relative;
+   margin-top: 20px;
+}
+
+.version-badge {
+  background: #ffd4c4;
+  color: #e67a5f;
+  padding: 8px 20px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  display: inline-block;
+  margin-bottom: 30px;
+}
+
+.version-badge.bottom {
+  position: absolute;
+  bottom: 30px;
+  left: 50px;
+  margin: 0;
+}
+
+.auth-title {
+  font-size: 36px;
+  font-weight: 700;
+  color: #2d2d2d;
+  margin-bottom: 12px;
+  
+  
+}
+
+.auth-subtitle {
+  font-size: 16px;
+  color: #7a7a7a;
+  margin-bottom: 40px;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group {
+  margin-bottom: 24px;
+}
+
+.form-label {
+  display: block;
+  font-size: 16px;
+  font-weight: 600;
+  color: #2d2d2d;
+  margin-bottom: 10px;
+}
+
+.required {
+  color: #e67a5f;
+}
+
+.form-input {
+  width: 100%;
+  padding: 18px 20px;
+  font-size: 15px;
+  border: none;
+  border-radius: 12px;
+  background: #ffeee6;
+  color: #2d2d2d;
+  transition: all 0.3s ease;
+}
+
+.form-input::placeholder {
+  color: #b8b8b8;
+}
+
+.form-input:focus {
+  outline: none;
+  background: #ffe8dc;
+  box-shadow: 0 0 0 3px rgba(230, 122, 95, 0.1);
+}
+
+.remember-me {
+  display: flex;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.checkbox {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #d4d4d4;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-right: 10px;
+}
+
+.checkbox-label {
+  font-size: 15px;
+  color: #5a5a5a;
+  cursor: pointer;
+  user-select: none;
+}
+
+
+.login-button {
+  width: 100%;
+  padding: 10px;
+  font-size: 17px;
+  font-weight: 600;
+  color: white;
+  background: linear-gradient(135deg, #ee9b85 0%, #e67a5f 100%);
+  border: none; 
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-bottom: 20px;
+  
+}
+.login-button:hover {
+  background: linear-gradient(135deg, #ec8f77 0%, #e46b50 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(230, 122, 95, 0.3);
+}
+
+.login-button:active {
+  transform: translateY(0);
+}
+
+.forgot-password {
+  text-align: center;
+  color: #e8a294;
+  font-size: 15px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 0.3s ease;
+  display: block;
+}
+
+.forgot-password:hover {
+  color: #e67a5f;
+}
+
+/* Sign Up Section - بعيد جداً */
+.signup-section {
+  text-align: center;
+  margin-top: 60px !important; /* !important عشان يتأكد يطبق */
+  padding-top: 40px;
+  border-top: 1px solid #f0d4ca;
+}
+
+.signup-text {
+  font-size: 15px;
+  color: #7a7a7a;
+  margin-right: 8px;
+}
+
+.signup-link {
+  font-size: 15px;
+  font-weight: 600;
+  color: #e67a5f;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.signup-link:hover {
+  color: #d66850;
+  text-decoration: underline;
+}
+
+@media (max-width: 600px) {
+  .auth-card {
+    padding: 40px 30px 70px 30px;
+  }
+
+  .auth-title {
+    font-size: 28px;
+  }
+
+  .version-badge.bottom {
+    left: 30px;
+    bottom: 20px;
+  }
+}
