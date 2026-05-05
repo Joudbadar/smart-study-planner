@@ -16,8 +16,8 @@ Your role is to:
 export default function Chatbot({ onClose }) {
   const [messages, setMessages] = useState([
     {
-      role: 'assistant',
-      text: "👋 Hi! I'm your Study Assistant. How can I help you today?",
+      role: 'Advisor',
+      text: "👋 Hi! I'm your Study Advisor. How can I help you today?",
     },
   ]);
   const [input, setInput]     = useState('');
@@ -84,7 +84,7 @@ export default function Chatbot({ onClose }) {
         <div className="chatbot-header-info">
           <span className="chatbot-avatar">🤖</span>
           <div>
-            <div className="chatbot-name">Study Assistant</div>
+            <div className="chatbot-name">Study Advisor</div>
             <div className="chatbot-status">● Online</div>
           </div>
         </div>
