@@ -1,38 +1,26 @@
 import { useState, useEffect } from 'react';
 import { getAuth } from 'firebase/auth';
 import { fetchTasks, updateTask, deleteTask } from './services/TaskService';
-import './TasksDeadlines.css';
+import './ScheduleAndTasks.css';
 
-/*
-const deadlines = [
-  { id: 1, title: 'Demo Submission', course: 'SWE 381', dueDate: 'Apr 10', priority: 'high', completed: false },
-  { id: 2, title: 'Phase One Submission', course: 'SWE 333', dueDate: 'Apr 12', priority: 'low', completed: false },
-  { id: 4, title: 'Tutorial 2', course: 'SWE 321', dueDate: 'Apr 18', priority: 'medium', completed: true },
-  { id: 5, title: 'Final Project Proposal', course: 'SWE 381', dueDate: 'Apr 20', priority: 'high', completed: false },
-];
-*/
-
-
-
+const EMPTY_FORM = { title: '', course: '', dueDate: '', priority: 'medium' };
 
 export default function TasksDeadlines() {
-
-// ----------- new -----------
-//  Removed static deadlines array, implemented dynamic state
   const [deadlines, setDeadlines] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState('All');
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState(EMPTY_FORM);
   const uid = getAuth().currentUser?.uid;
 
-  // fetch data on mount
   useEffect(() => {
-    if (!uid) return;
+    if (!uid) { setLoading(false); return; }
     fetchTasks(uid).then(data => {
       setDeadlines(data);
       setLoading(false);
     });
   }, [uid]);
 
-  // action handlers hooked to Firebase
   const handleComplete = async (id, currentStatus) => {
     await updateTask(uid, id, { completed: !currentStatus });
     setDeadlines(prev => prev.map(t => t.id === id ? { ...t, completed: !currentStatus } : t));
@@ -44,18 +32,88 @@ export default function TasksDeadlines() {
     setDeadlines(prev => prev.filter(t => t.id !== id));
   };
 
-  if (loading) return <p>Loading tasks...</p>;
+  const handleAdd = () => {
+    if (!form.title || !form.course || !form.dueDate) return alert('Please fill in Title, Course, and Due Date.');
+    const newTask = {
+      id: Date.now(),
+      title: form.title,
+      course: form.course,
+      dueDate: form.dueDate,
+      priority: form.priority,
+      completed: false,
+    };
+    setDeadlines(prev => [...prev, newTask]);
+    setForm(EMPTY_FORM);
+    setShowForm(false);
+  };
 
+  const filtered = deadlines.filter(item =>
+    filter === 'All' || item.priority === filter.toLowerCase()
+  );
+
+  if (loading) return <p>Loading tasks...</p>;
 
   return (
     <div className="tasks-deadlines-wrapper">
-      {/* Header Section */}
+
+      {/* Header */}
       <div className="tasks-header">
         <h1 className="tasks-title">⚠️ Tasks & Deadlines</h1>
-        <button className="add-task-button">+ Add Task</button>
+        <button className="add-task-button" onClick={() => setShowForm(true)}>
+          + Add Task
+        </button>
       </div>
 
-      {/* Statistics Section */}
+      {/* Add Task Form */}
+      {showForm && (
+        <div className="modal-overlay">
+          <div className="modal-card">
+            <h2 className="modal-title">New Task</h2>
+
+            <label className="modal-label">Title <span className="modal-required">*</span></label>
+            <input
+              className="modal-input"
+              placeholder="e.g. Demo Submission"
+              value={form.title}
+              onChange={e => setForm({ ...form, title: e.target.value })}
+            />
+
+            <label className="modal-label">Course <span className="modal-required">*</span></label>
+            <input
+              className="modal-input"
+              placeholder="e.g. SWE 381"
+              value={form.course}
+              onChange={e => setForm({ ...form, course: e.target.value })}
+            />
+
+            <label className="modal-label">Due Date <span className="modal-required">*</span></label>
+            <input
+              className="modal-input"
+              type="date"
+              value={form.dueDate}
+              onChange={e => setForm({ ...form, dueDate: e.target.value })}
+            />
+
+            <label className="modal-label">Priority</label>
+            <select
+              className="modal-input"
+              value={form.priority}
+              onChange={e => setForm({ ...form, priority: e.target.value })}
+            >
+              <option value="high">High</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
+            </select>
+
+            <div className="modal-actions">
+              <button className="modal-cancel" onClick={() => { setShowForm(false); setForm(EMPTY_FORM); }}>Cancel</button>
+              <button className="modal-save" onClick={handleAdd}>Add</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Statistics */}
       <div className="statistics-cards-container">
         <div className="statistic-card-item">
           <div className="statistic-number">{deadlines.length}</div>
@@ -71,47 +129,48 @@ export default function TasksDeadlines() {
         </div>
       </div>
 
-      {/* Filter Buttons Section */}
+      {/* Filter Buttons */}
       <div className="filter-buttons-container">
-        <button className="filter-button active">All</button>
-        <button className="filter-button">High</button>
-        <button className="filter-button">Medium</button>
-        <button className="filter-button">Low</button>
+        {['All', 'High', 'Medium', 'Low'].map(f => (
+          <button
+            key={f}
+            className={`filter-button ${filter === f ? 'active' : ''}`}
+            onClick={() => setFilter(f)}
+          >
+            {f}
+          </button>
+        ))}
       </div>
 
-      {/* Deadlines List Section */}
+      {/* Task List */}
       <div className="deadlines-list-container">
-        {deadlines.map(item => (
-          <div 
-            key={item.id} 
+        {filtered.length === 0 && (
+          <p style={{ color: '#aaa', textAlign: 'center', marginTop: '40px' }}>
+            No tasks yet. Click "+ Add Task" to get started.
+          </p>
+        )}
+        {filtered.map(item => (
+          <div
+            key={item.id}
             className={`deadline-task-card ${item.priority} ${item.completed ? 'task-completed' : ''}`}
           >
-            {/* Priority Badge */}
             <div className={`priority-badge ${item.priority}`}>{item.priority}</div>
-            
-            {/* Task Information */}
+
             <div className="task-info-section">
               <div className="task-title">{item.title}</div>
               <div className="task-course-name">{item.course}</div>
               <div className="task-due-date">📅 Due: {item.dueDate}</div>
             </div>
-            
-            {/* Action Buttons */}
-            <div className="task-action-buttons">
-              {/*
-              <button className="complete-task-button">✓</button>
-              <button className="edit-task-button">✎</button>
-              <button className="delete-task-button">🗑</button>
-              */}
 
+            <div className="task-action-buttons">
               <button className="complete-task-button" onClick={() => handleComplete(item.id, item.completed)}>✓</button>
               <button className="edit-task-button">✎</button>
               <button className="delete-task-button" onClick={() => handleDelete(item.id)}>🗑</button>
-            
             </div>
           </div>
         ))}
       </div>
+
     </div>
   );
 }
