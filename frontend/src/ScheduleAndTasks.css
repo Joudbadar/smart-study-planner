@@ -173,7 +173,11 @@
   background: #ffebee;
   color: #f44336;
 }
-
+.study-session-item.session-completed .session-course,
+.study-session-item.session-completed .session-task,
+.study-session-item.session-completed .session-time {
+  text-decoration: line-through;
+}
 
 /* ════════════════════════════════
    TASKS & DEADLINES
@@ -488,4 +492,55 @@
   .tasks-deadlines-wrapper { padding: 10px; }
   .tasks-header          { flex-direction: column; gap: 10px; }
   .task-title            { font-size: 13px; }
+}
+/* ── Week Navigation ── */
+.week-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: white;
+  border-radius: 12px;
+  padding: 12px 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+}
+
+.week-nav-btn {
+  background: linear-gradient(135deg, #e67a5f, #ee9b85);
+  color: white;
+  border: none;
+  padding: 7px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  font-size: 13px;
+}
+
+.week-nav-btn:hover {
+  opacity: 0.9;
+}
+
+.week-nav-label {
+  font-weight: 700;
+  font-size: 15px;
+  color: #2d2d2d;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.week-nav-dates {
+  font-size: 11px;
+  font-weight: 400;
+  color: #999;
+}
+
+/* Date under day header */
+.day-column-date {
+  font-size: 10px;
+  font-weight: 400;
+  color: #aaa;
+  margin-top: 2px;
 }

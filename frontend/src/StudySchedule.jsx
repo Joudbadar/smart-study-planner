@@ -3,16 +3,60 @@ import { getAuth } from 'firebase/auth';
 import { fetchSessions, updateSession, deleteSession } from './services/SessionService';
 import './ScheduleAndTasks.css';
 
-const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const EMPTY_FORM = { date: '', startTime: '', endTime: '', course: '', task: '' };
 
-const EMPTY_FORM = { day: 'Sunday', startTime: '', endTime: '', course: '', task: '' };
+function getWeekStart(offset = 0) {
+  const today = new Date();
+  const sunday = new Date(today);
+  sunday.setDate(today.getDate() - today.getDay() + offset * 7);
+  sunday.setHours(0, 0, 0, 0);
+  return sunday;
+}
+
+function formatDisplay(date) {
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function getWeekDates(weekStart) {
+  return DAYS.map((_, i) => {
+    const d = new Date(weekStart);
+    d.setDate(weekStart.getDate() + i);
+    return d;
+  });
+}
+
+function getWeekLabel(weekStart) {
+  const end = new Date(weekStart);
+  end.setDate(weekStart.getDate() + 6);
+  return `${formatDisplay(weekStart)} – ${formatDisplay(end)}`;
+}
+
+// Convert a date string "YYYY-MM-DD" to day name e.g. "Monday"
+function getDayName(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  return DAYS[d.getDay()];
+}
+
+// Convert a date string "YYYY-MM-DD" to week offset relative to current week
+function getWeekOffset(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  d.setHours(0, 0, 0, 0);
+  const todaySunday = getWeekStart(0);
+  const diff = Math.round((d - todaySunday) / (7 * 24 * 60 * 60 * 1000));
+  return Math.floor(diff);
+}
 
 export default function StudySchedule() {
   const [schedule, setSchedule] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
+  const [weekOffset, setWeekOffset] = useState(0);
   const uid = getAuth().currentUser?.uid;
+
+  const weekStart = getWeekStart(weekOffset);
+  const weekDates = getWeekDates(weekStart);
 
   useEffect(() => {
     if (!uid) { setLoading(false); return; }
@@ -34,16 +78,18 @@ export default function StudySchedule() {
     setSchedule(prev => prev.filter(s => s.id !== id));
   };
 
-const handleAdd = () => {
-    if (!form.startTime || !form.endTime || !form.course)
-      return alert('Please fill in Start Time, End Time, and Course.');
-
-    if (form.endTime <= form.startTime)
-      return alert('End time must be after start time.');
+  const handleAdd = () => {
+    if (!form.date)      return alert('Please pick a date.');
+    if (!form.startTime) return alert('Please pick a start time.');
+    if (!form.endTime)   return alert('Please pick an end time.');
+    if (!form.course)    return alert('Please enter a course.');
+    if (form.endTime <= form.startTime) return alert('End time must be after start time.');
 
     const newSession = {
       id: Date.now(),
-      day: form.day,
+      date: form.date,
+      day: getDayName(form.date),
+      weekOffset: getWeekOffset(form.date),
       time: `${form.startTime} - ${form.endTime}`,
       course: form.course,
       task: form.task,
@@ -53,6 +99,9 @@ const handleAdd = () => {
     setForm(EMPTY_FORM);
     setShowForm(false);
   };
+
+  // Sessions that belong to the currently viewed week
+  const weekSessions = schedule.filter(s => (s.weekOffset ?? 0) === weekOffset);
 
   if (loading) return <p>Loading schedule...</p>;
 
@@ -67,20 +116,29 @@ const handleAdd = () => {
         </button>
       </div>
 
+      {/* Week Navigation */}
+      <div className="week-nav">
+        <button className="week-nav-btn" onClick={() => setWeekOffset(w => w - 1)}>← Prev</button>
+        <span className="week-nav-label">
+          {weekOffset === 0 ? 'This Week' : weekOffset === 1 ? 'Next Week' : weekOffset === -1 ? 'Last Week' : `Week ${weekOffset > 0 ? '+' : ''}${weekOffset}`}
+          <span className="week-nav-dates">{getWeekLabel(weekStart)}</span>
+        </span>
+        <button className="week-nav-btn" onClick={() => setWeekOffset(w => w + 1)}>Next →</button>
+      </div>
+
       {/* Add Session Modal */}
       {showForm && (
         <div className="modal-overlay">
           <div className="modal-card">
             <h2 className="modal-title">Add Session</h2>
 
-            <label className="modal-label">Day</label>
-            <select
+            <label className="modal-label">Date <span className="modal-required">*</span></label>
+            <input
               className="modal-input"
-              value={form.day}
-              onChange={e => setForm({ ...form, day: e.target.value })}
-            >
-              {days.map(d => <option key={d}>{d}</option>)}
-            </select>
+              type="date"
+              value={form.date}
+              onChange={e => setForm({ ...form, date: e.target.value })}
+            />
 
             <div className="modal-row">
               <div className="modal-col">
@@ -130,26 +188,29 @@ const handleAdd = () => {
       {/* Statistics */}
       <div className="statistics-container">
         <div className="statistic-card">
-          <div className="statistic-number">{schedule.length}</div>
+          <div className="statistic-number">{weekSessions.length}</div>
           <div className="statistic-label">Total</div>
         </div>
         <div className="statistic-card">
-          <div className="statistic-number">{schedule.filter(s => s.status === 'completed').length}</div>
+          <div className="statistic-number">{weekSessions.filter(s => s.status === 'completed').length}</div>
           <div className="statistic-label">Completed</div>
         </div>
         <div className="statistic-card">
-          <div className="statistic-number">{schedule.filter(s => s.status !== 'completed').length}</div>
+          <div className="statistic-number">{weekSessions.filter(s => s.status !== 'completed').length}</div>
           <div className="statistic-label">Pending</div>
         </div>
       </div>
 
       {/* Weekly Grid */}
       <div className="weekly-calendar-grid">
-        {days.map(day => (
+        {DAYS.map((day, i) => (
           <div key={day} className="calendar-day-column">
-            <div className="day-column-header">{day}</div>
+            <div className="day-column-header">
+              <div>{day}</div>
+              <div className="day-column-date">{formatDisplay(weekDates[i])}</div>
+            </div>
             <div className="day-sessions-list">
-              {schedule.filter(s => s.day === day).map(session => (
+              {weekSessions.filter(s => s.day === day).map(session => (
                 <div
                   key={session.id}
                   className={`study-session-item ${session.status === 'completed' ? 'session-completed' : ''}`}
