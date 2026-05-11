@@ -11,7 +11,7 @@ export async function fetchSessions(uid) {
 
 export async function addSession(uid, data) {
   const ref = await addDoc(sessionsRef(uid), data);
-  return ref.id;
+  return { id: ref.id, ...data };
 }
 
 export async function updateSession(uid, id, data) {

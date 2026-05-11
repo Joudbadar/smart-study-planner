@@ -11,7 +11,7 @@ export async function fetchTasks(uid) {
 
 export async function addTask(uid, data) {
   const ref = await addDoc(tasksRef(uid), data);
-  return ref.id;
+  return { id: ref.id, ...data };
 }
 
 export async function updateTask(uid, id, data) {

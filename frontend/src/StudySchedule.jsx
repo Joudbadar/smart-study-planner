@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getAuth } from 'firebase/auth';
-import { fetchSessions, updateSession, deleteSession } from './services/SessionService';
+import { fetchSessions, addSession, updateSession, deleteSession } from './services/SessionService';
 import './ScheduleAndTasks.css';
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -32,13 +32,11 @@ function getWeekLabel(weekStart) {
   return `${formatDisplay(weekStart)} – ${formatDisplay(end)}`;
 }
 
-// Convert a date string "YYYY-MM-DD" to day name e.g. "Monday"
 function getDayName(dateStr) {
   const d = new Date(dateStr + 'T00:00:00');
   return DAYS[d.getDay()];
 }
 
-// Convert a date string "YYYY-MM-DD" to week offset relative to current week
 function getWeekOffset(dateStr) {
   const d = new Date(dateStr + 'T00:00:00');
   d.setHours(0, 0, 0, 0);
@@ -78,7 +76,7 @@ export default function StudySchedule() {
     setSchedule(prev => prev.filter(s => s.id !== id));
   };
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!form.date)      return alert('Please pick a date.');
     if (!form.startTime) return alert('Please pick a start time.');
     if (!form.endTime)   return alert('Please pick an end time.');
@@ -86,7 +84,6 @@ export default function StudySchedule() {
     if (form.endTime <= form.startTime) return alert('End time must be after start time.');
 
     const newSession = {
-      id: Date.now(),
       date: form.date,
       day: getDayName(form.date),
       weekOffset: getWeekOffset(form.date),
@@ -95,12 +92,13 @@ export default function StudySchedule() {
       task: form.task,
       status: 'pending',
     };
-    setSchedule(prev => [...prev, newSession]);
+
+    const saved = await addSession(uid, newSession);
+    setSchedule(prev => [...prev, saved]);
     setForm(EMPTY_FORM);
     setShowForm(false);
   };
 
-  // Sessions that belong to the currently viewed week
   const weekSessions = schedule.filter(s => (s.weekOffset ?? 0) === weekOffset);
 
   if (loading) return <p>Loading schedule...</p>;
@@ -108,7 +106,6 @@ export default function StudySchedule() {
   return (
     <div className="study-schedule-wrapper">
 
-      {/* Header */}
       <div className="schedule-header">
         <h1 className="schedule-title">📅 Study Schedule</h1>
         <button className="add-session-button" onClick={() => setShowForm(true)}>
@@ -116,7 +113,6 @@ export default function StudySchedule() {
         </button>
       </div>
 
-      {/* Week Navigation */}
       <div className="week-nav">
         <button className="week-nav-btn" onClick={() => setWeekOffset(w => w - 1)}>← Prev</button>
         <span className="week-nav-label">
@@ -126,7 +122,6 @@ export default function StudySchedule() {
         <button className="week-nav-btn" onClick={() => setWeekOffset(w => w + 1)}>Next →</button>
       </div>
 
-      {/* Add Session Modal */}
       {showForm && (
         <div className="modal-overlay">
           <div className="modal-card">
@@ -185,7 +180,6 @@ export default function StudySchedule() {
         </div>
       )}
 
-      {/* Statistics */}
       <div className="statistics-container">
         <div className="statistic-card">
           <div className="statistic-number">{weekSessions.length}</div>
@@ -201,7 +195,6 @@ export default function StudySchedule() {
         </div>
       </div>
 
-      {/* Weekly Grid */}
       <div className="weekly-calendar-grid">
         {DAYS.map((day, i) => (
           <div key={day} className="calendar-day-column">

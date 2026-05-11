@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getAuth } from 'firebase/auth';
-import { fetchTasks, updateTask, deleteTask } from './services/TaskService';
+import { fetchTasks, addTask, updateTask, deleteTask } from './services/TaskService';
 import './ScheduleAndTasks.css';
 
 const EMPTY_FORM = { title: '', course: '', dueDate: '', priority: 'medium' };
@@ -32,17 +32,20 @@ export default function TasksDeadlines() {
     setDeadlines(prev => prev.filter(t => t.id !== id));
   };
 
-  const handleAdd = () => {
-    if (!form.title || !form.course || !form.dueDate) return alert('Please fill in Title, Course, and Due Date.');
+  const handleAdd = async () => {
+    if (!form.title || !form.course || !form.dueDate)
+      return alert('Please fill in Title, Course, and Due Date.');
+
     const newTask = {
-      id: Date.now(),
       title: form.title,
       course: form.course,
       dueDate: form.dueDate,
       priority: form.priority,
       completed: false,
     };
-    setDeadlines(prev => [...prev, newTask]);
+
+    const saved = await addTask(uid, newTask);
+    setDeadlines(prev => [...prev, saved]);
     setForm(EMPTY_FORM);
     setShowForm(false);
   };
@@ -56,7 +59,6 @@ export default function TasksDeadlines() {
   return (
     <div className="tasks-deadlines-wrapper">
 
-      {/* Header */}
       <div className="tasks-header">
         <h1 className="tasks-title">⚠️ Tasks & Deadlines</h1>
         <button className="add-task-button" onClick={() => setShowForm(true)}>
@@ -64,7 +66,6 @@ export default function TasksDeadlines() {
         </button>
       </div>
 
-      {/* Add Task Form */}
       {showForm && (
         <div className="modal-overlay">
           <div className="modal-card">
@@ -113,7 +114,6 @@ export default function TasksDeadlines() {
         </div>
       )}
 
-      {/* Statistics */}
       <div className="statistics-cards-container">
         <div className="statistic-card-item">
           <div className="statistic-number">{deadlines.length}</div>
@@ -129,7 +129,6 @@ export default function TasksDeadlines() {
         </div>
       </div>
 
-      {/* Filter Buttons */}
       <div className="filter-buttons-container">
         {['All', 'High', 'Medium', 'Low'].map(f => (
           <button
@@ -142,7 +141,6 @@ export default function TasksDeadlines() {
         ))}
       </div>
 
-      {/* Task List */}
       <div className="deadlines-list-container">
         {filtered.length === 0 && (
           <p style={{ color: '#aaa', textAlign: 'center', marginTop: '40px' }}>
