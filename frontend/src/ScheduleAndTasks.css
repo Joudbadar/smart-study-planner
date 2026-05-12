@@ -38,6 +38,7 @@
   font-weight: 600;
   cursor: pointer;
   transition: opacity 0.3s;
+  white-space: nowrap;
 }
 
 .add-session-button:hover {
@@ -49,7 +50,6 @@
   display: flex;
   gap: 16px;
   margin-bottom: 24px;
-  flex-wrap: wrap;
 }
 
 .statistic-card {
@@ -60,7 +60,6 @@
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
   transition: transform 0.3s;
   flex: 1;
-  min-width: 100px;
 }
 
 .statistic-card:hover {
@@ -80,20 +79,22 @@
 
 /* Weekly grid */
 .weekly-calendar-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  display: flex;
+  flex-direction: row;
   gap: 10px;
   overflow-x: auto;
   flex: 1;
   min-height: 0;
-  min-width: 700px;
+  padding-bottom: 8px;
+  -webkit-overflow-scrolling: touch;
 }
 
 .calendar-day-column {
   background: white;
   border-radius: 10px;
   padding: 10px;
-  min-width: 120px;
+  min-width: 130px;
+  flex-shrink: 0;
 }
 
 .day-column-header {
@@ -102,6 +103,13 @@
   padding-bottom: 8px;
   border-bottom: 2px solid #f0e0d8;
   margin-bottom: 10px;
+}
+
+.day-column-date {
+  font-size: 10px;
+  font-weight: 400;
+  color: #aaa;
+  margin-top: 2px;
 }
 
 .day-sessions-list {
@@ -122,6 +130,12 @@
 .study-session-item.session-completed {
   opacity: 0.5;
   border-left-color: #4caf50;
+}
+
+.study-session-item.session-completed .session-course,
+.study-session-item.session-completed .session-task,
+.study-session-item.session-completed .session-time {
+  text-decoration: line-through;
 }
 
 .session-time {
@@ -166,20 +180,54 @@
   transform: scale(1.05);
 }
 
-.complete-session-button {
-  background: #e8f5e9;
-  color: #4caf50;
+.complete-session-button { background: #e8f5e9; color: #4caf50; }
+.delete-session-button   { background: #ffebee; color: #f44336; }
+
+/* ── Week Navigation ── */
+.week-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: white;
+  border-radius: 12px;
+  padding: 12px 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
 }
 
-.delete-session-button {
-  background: #ffebee;
-  color: #f44336;
+.week-nav-btn {
+  background: linear-gradient(135deg, #e67a5f, #ee9b85);
+  color: white;
+  border: none;
+  padding: 7px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  font-size: 13px;
+  white-space: nowrap;
 }
-.study-session-item.session-completed .session-course,
-.study-session-item.session-completed .session-task,
-.study-session-item.session-completed .session-time {
-  text-decoration: line-through;
+
+.week-nav-btn:hover { opacity: 0.9; }
+
+.week-nav-label {
+  font-weight: 700;
+  font-size: 15px;
+  color: #2d2d2d;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  text-align: center;
+  padding: 0 8px;
 }
+
+.week-nav-dates {
+  font-size: 11px;
+  font-weight: 400;
+  color: #999;
+}
+
 
 /* ════════════════════════════════
    TASKS & DEADLINES
@@ -215,11 +263,10 @@
   font-weight: 600;
   cursor: pointer;
   transition: opacity 0.3s;
+  white-space: nowrap;
 }
 
-.add-task-button:hover {
-  opacity: 0.9;
-}
+.add-task-button:hover { opacity: 0.9; }
 
 /* Statistics cards */
 .statistics-cards-container {
@@ -238,9 +285,7 @@
   transition: transform 0.3s;
 }
 
-.statistic-card-item:hover {
-  transform: translateY(-5px);
-}
+.statistic-card-item:hover { transform: translateY(-5px); }
 
 .statistic-label-text {
   font-size: 13px;
@@ -256,12 +301,14 @@
 }
 
 .filter-button {
-  background: #ffd1c4;
-  border: 1px solid #ddd;
+  background: #ffe8e0;
+  border: 1px solid #f5c4b8;
+  color: #e67a5f;
   padding: 5px 14px;
   border-radius: 20px;
   cursor: pointer;
   font-size: 12px;
+  font-weight: 600;
   transition: all 0.3s;
 }
 
@@ -269,7 +316,7 @@
 .filter-button:hover {
   background: #e67a5f;
   color: white;
-  border: none;
+  border-color: #e67a5f;
 }
 
 /* Task cards */
@@ -289,19 +336,16 @@
   display: flex;
   align-items: center;
   gap: 14px;
-  flex-wrap: wrap;
   border-left: 4px solid;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
   transition: transform 0.3s;
 }
 
-.deadline-task-card:hover {
-  transform: translateY(-3px);
-}
+.deadline-task-card:hover { transform: translateY(-3px); }
 
-.deadline-task-card.high    { border-left-color: #f44336; }
-.deadline-task-card.medium  { border-left-color: #ff9800; }
-.deadline-task-card.low     { border-left-color: #4caf50; }
+.deadline-task-card.high   { border-left-color: #f44336; }
+.deadline-task-card.medium { border-left-color: #ff9800; }
+.deadline-task-card.low    { border-left-color: #4caf50; }
 .deadline-task-card.task-completed { opacity: 0.5; }
 
 /* Priority badges */
@@ -312,6 +356,7 @@
   font-weight: 700;
   min-width: 60px;
   text-align: center;
+  flex-shrink: 0;
 }
 
 .priority-badge.high   { background: #ffebee; color: #f44336; }
@@ -319,19 +364,19 @@
 .priority-badge.low    { background: #e8f5e9; color: #4caf50; }
 
 /* Task info */
-.task-info-section { flex: 1; }
+.task-info-section { flex: 1; min-width: 0; }
 .task-title        { font-weight: 700; font-size: 14px; }
 .task-course-name  { font-size: 12px; color: #666; margin: 3px 0; }
 .task-due-date     { font-size: 11px; color: #999; }
 
 /* Action buttons */
-.task-action-buttons { display: flex; gap: 6px; }
+.task-action-buttons { display: flex; gap: 6px; flex-shrink: 0; }
 
 .complete-task-button,
 .edit-task-button,
 .delete-task-button {
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   border: none;
   border-radius: 5px;
   cursor: pointer;
@@ -341,9 +386,7 @@
 
 .complete-task-button:hover,
 .edit-task-button:hover,
-.delete-task-button:hover {
-  transform: scale(1.05);
-}
+.delete-task-button:hover { transform: scale(1.05); }
 
 .complete-task-button { background: #e8f5e9; color: #4caf50; }
 .edit-task-button     { background: #fff3e0; color: #ff9800; }
@@ -362,14 +405,17 @@
   align-items: center;
   justify-content: center;
   z-index: 999;
+  padding: 16px;
 }
 
 .modal-card {
   background: white;
   border-radius: 20px;
-  padding: 32px 36px;
+  padding: 28px;
   width: 100%;
   max-width: 440px;
+  max-height: 90vh;
+  overflow-y: auto;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
   display: flex;
   flex-direction: column;
@@ -377,28 +423,26 @@
 }
 
 .modal-title {
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 800;
   color: #2d2d2d;
   text-align: center;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .modal-label {
   font-size: 13px;
   font-weight: 600;
   color: #2d2d2d;
-  margin-top: 10px;
+  margin-top: 8px;
   margin-bottom: 4px;
 }
 
-.modal-required {
-  color: #e67a5f;
-}
+.modal-required { color: #e67a5f; }
 
 .modal-input {
   width: 100%;
-  padding: 12px 16px;
+  padding: 11px 14px;
   border: none;
   border-radius: 12px;
   font-size: 14px;
@@ -408,17 +452,12 @@
   transition: background 0.2s;
 }
 
-.modal-input::placeholder {
-  color: #c4a49e;
-}
-
-.modal-input:focus {
-  background: #fae4de;
-}
+.modal-input::placeholder { color: #c4a49e; }
+.modal-input:focus { background: #fae4de; }
 
 .modal-row {
   display: flex;
-  gap: 16px;
+  gap: 12px;
 }
 
 .modal-col {
@@ -430,120 +469,80 @@
 .modal-actions {
   display: flex;
   gap: 12px;
-  margin-top: 24px;
+  margin-top: 20px;
 }
 
 .modal-cancel {
   flex: 1;
-  padding: 12px;
+  padding: 11px;
   border: none;
   border-radius: 12px;
   background: #f0f0f0;
   cursor: pointer;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   color: #888;
   transition: background 0.2s;
 }
 
-.modal-cancel:hover {
-  background: #e0e0e0;
-}
+.modal-cancel:hover { background: #e0e0e0; }
 
 .modal-save {
   flex: 2;
-  padding: 12px;
+  padding: 11px;
   border: none;
   border-radius: 12px;
   background: linear-gradient(135deg, #e67a5f, #ee9b85);
   color: white;
   font-weight: 700;
   cursor: pointer;
-  font-size: 15px;
+  font-size: 14px;
   transition: opacity 0.2s;
 }
 
-.modal-save:hover {
-  opacity: 0.9;
-}
+.modal-save:hover { opacity: 0.9; }
 
 
 /* ════════════════════════════════
    RESPONSIVE
 ════════════════════════════════ */
 
-@media (max-width: 800px) {
-  .weekly-calendar-grid {
-    grid-template-columns: repeat(4, 1fr);
-    min-width: auto;
-  }
-  .statistics-container,
-  .statistics-cards-container {
-    flex-direction: column;
-  }
+@media (max-width: 768px) {
+  /* Schedule */
+  .study-schedule-wrapper { padding: 12px; }
+  .schedule-title { font-size: 18px; }
+  .add-session-button { padding: 7px 12px; font-size: 13px; }
+
+  /* Week nav */
+  .week-nav { padding: 10px 12px; }
+  .week-nav-btn { padding: 6px 10px; font-size: 12px; }
+  .week-nav-label { font-size: 13px; }
+
+  /* Stats */
+  .statistics-container { gap: 8px; }
+  .statistic-card { padding: 12px 8px; }
+  .statistic-number { font-size: 22px; }
+  .statistic-label { font-size: 11px; }
+
+  /* Tasks */
+  .tasks-deadlines-wrapper { padding: 12px; }
+  .tasks-title { font-size: 18px; }
+  .add-task-button { padding: 7px 12px; font-size: 13px; }
+  .statistics-cards-container { gap: 8px; }
+  .statistic-card-item { padding: 12px 8px; }
+  .statistic-label-text { font-size: 11px; }
+
+  /* Modal */
+  .modal-card { padding: 20px 16px; border-radius: 16px; }
+  .modal-title { font-size: 18px; }
+  .modal-input { padding: 10px 12px; font-size: 13px; }
+  .modal-row { gap: 8px; }
 }
 
-@media (max-width: 700px) {
-  .deadline-task-card    { flex-direction: column; align-items: flex-start; }
-  .task-action-buttons   { align-self: flex-end; }
+@media (max-width: 480px) {
   .filter-buttons-container { justify-content: center; }
-}
-
-@media (max-width: 500px) {
-  .weekly-calendar-grid  { grid-template-columns: 1fr; }
-  .tasks-deadlines-wrapper { padding: 10px; }
-  .tasks-header          { flex-direction: column; gap: 10px; }
-  .task-title            { font-size: 13px; }
-}
-/* ── Week Navigation ── */
-.week-nav {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: white;
-  border-radius: 12px;
-  padding: 12px 20px;
-  margin-bottom: 20px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
-}
-
-.week-nav-btn {
-  background: linear-gradient(135deg, #e67a5f, #ee9b85);
-  color: white;
-  border: none;
-  padding: 7px 16px;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: opacity 0.2s;
-  font-size: 13px;
-}
-
-.week-nav-btn:hover {
-  opacity: 0.9;
-}
-
-.week-nav-label {
-  font-weight: 700;
-  font-size: 15px;
-  color: #2d2d2d;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-}
-
-.week-nav-dates {
-  font-size: 11px;
-  font-weight: 400;
-  color: #999;
-}
-
-/* Date under day header */
-.day-column-date {
-  font-size: 10px;
-  font-weight: 400;
-  color: #aaa;
-  margin-top: 2px;
+  .statistic-number { font-size: 20px; }
+  .deadline-task-card { padding: 10px; gap: 8px; }
+  .task-title { font-size: 13px; }
 }
 
