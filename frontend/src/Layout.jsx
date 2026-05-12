@@ -149,7 +149,7 @@ export default function Layout({ children }) {
                 padding: '4px 8px', borderRadius: '8px', transition: 'background 0.2s',
               }}
             >
-              <div className="user-avatar" style={{ fontSize: '22px', background: 'none' }}>
+              <div className="user-avatar" style={{ fontSize: '18px', background: 'none' }}>
                 {emoji}
               </div>
               <span className="user-name">{displayName}</span>

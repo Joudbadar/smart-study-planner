@@ -1,7 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap');
 
-
-
 body {
   font-family: 'Inter', sans-serif;
   background: linear-gradient(135deg, #fef6f4 0%, #ffe8e0 100%);
@@ -11,11 +9,14 @@ body {
 
 /* ── Header ── */
 .header {
-  background: white;
-  padding: 1.2rem 2rem;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  padding: 0px 2rem;
+  height: 120px;
+  box-shadow: 0 2px 20px rgba(232, 155, 142, 0.1);
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: 1rem;
   align-items: center;
   position: sticky;
   top: 0;
@@ -26,6 +27,8 @@ body {
   display: flex;
   align-items: center;
   gap: 1.5rem;
+    margin-left: auto;
+
 }
 
 .logo {
@@ -36,6 +39,7 @@ body {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  white-space: nowrap;
 }
 
 .notification-icon {
@@ -77,8 +81,8 @@ body {
 .user-profile:hover { background: #ffeee6; }
 
 .user-avatar {
-  width: 40px;
-  height: 40px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   background: linear-gradient(135deg, #e67a5f, #ee9b85);
   display: flex;
@@ -117,8 +121,9 @@ body {
   color: #7a7a7a;
   font-weight: 500;
   text-decoration: none;
+  white-space: nowrap;    
+  font-size: 0.88rem;     
 }
-
 .nav-item:hover {
   background: #ffeee6;
   color: #e67a5f;
@@ -218,8 +223,8 @@ body {
 
 .card-title {
   font-family: 'Poppins', sans-serif;
-  font-size: 1.3rem;
-  font-weight: 700;
+ font-size: 1.1rem; 
+   font-weight: 700;
   color: #2d2d2d;
 }
 
@@ -419,15 +424,23 @@ body {
 
 @media (max-width: 768px) {
   .sidebar { display: none; }
-  .stats-grid { grid-template-columns: 1fr; }
+  .stats-grid { grid-template-columns: 1fr 1fr; }
   .bottom-grid { grid-template-columns: 1fr; }
-}
-@media (max-width: 768px) {
+
   .header {
-    padding: 0.8rem 1rem;
+    padding: 0.7rem 1rem;
   }
 
   .logo {
-    font-size: 1.1rem;
+    font-size: 1rem;
   }
+
+  .main-content {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+  .logo { font-size: 0.9rem; }
 }
