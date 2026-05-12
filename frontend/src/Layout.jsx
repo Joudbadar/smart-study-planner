@@ -19,9 +19,14 @@ export default function Layout({ children }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [profileOpen, setProfileOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [displayName, setDisplayName] = useState('User');
   const [emoji, setEmoji] = useState('\u{1F427}');
   const profileRef = useRef(null);
+  const menuRef = useRef(null);
+
+  // Close mobile menu on route change
+  useEffect(() => { setMenuOpen(false); }, [location.pathname]);
 
   useEffect(() => {
     const auth = getAuth();
@@ -40,6 +45,9 @@ export default function Layout({ children }) {
     const handleClickOutside = (e) => {
       if (profileRef.current && !profileRef.current.contains(e.target)) {
         setProfileOpen(false);
+      }
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setMenuOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -64,9 +72,72 @@ export default function Layout({ children }) {
 
   return (
     <div className="dashboard">
+
       {/* ── Top Bar ── */}
       <header className="header">
+
+        {/* Hamburger button — only visible on mobile */}
+        <div ref={menuRef} style={{ position: 'relative' }}>
+          <button
+            onClick={() => setMenuOpen(prev => !prev)}
+            style={{
+              display: 'none',
+              background: 'none',
+              border: 'none',
+              fontSize: '24px',
+              cursor: 'pointer',
+              color: '#2d2d2d',
+              padding: '4px 8px',
+            }}
+            className="hamburger-btn"
+          >
+            {menuOpen ? '✕' : '☰'}
+          </button>
+
+          {/* Dropdown nav menu */}
+          {menuOpen && (
+            <div style={{
+              position: 'absolute',
+              top: 'calc(100% + 8px)',
+              left: 0,
+              background: '#fff',
+              border: '1px solid #fde0d6',
+              borderRadius: '14px',
+              boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
+              minWidth: '220px',
+              zIndex: 1000,
+              overflow: 'hidden',
+              animation: 'fadeSlideIn 0.2s ease',
+            }}>
+              {NAV_ITEMS.map(({ icon, label, path }) => (
+                <Link
+                  key={label}
+                  to={path}
+                  onClick={() => setMenuOpen(false)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    padding: '12px 18px',
+                    textDecoration: 'none',
+                    color: location.pathname === path ? '#e67a5f' : '#2d2d2d',
+                    fontWeight: location.pathname === path ? '700' : '500',
+                    background: location.pathname === path ? '#fef6f4' : 'none',
+                    fontSize: '14px',
+                    borderBottom: '1px solid #fef0ec',
+                    transition: 'background 0.2s',
+                  }}
+                >
+                  <span>{icon}</span>
+                  <span>{label}</span>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+
         <div className="logo">📚 Smart Study Planner</div>
+
         <div className="header-right">
           <div className="user-profile" ref={profileRef} style={{ position: 'relative' }}>
             <button
@@ -138,7 +209,7 @@ export default function Layout({ children }) {
       </header>
 
       <div className="container">
-        {/* ── Sidebar ── */}
+        {/* ── Sidebar (desktop only) ── */}
         <aside className="sidebar">
           <nav>
             {NAV_ITEMS.map(({ icon, label, path }) => (
@@ -166,6 +237,12 @@ export default function Layout({ children }) {
           to   { opacity: 1; transform: translateY(0); }
         }
         .profile-trigger:hover { background: rgba(0,0,0,0.05) !important; }
+
+        /* Show hamburger only on mobile */
+        @media (max-width: 768px) {
+          .hamburger-btn { display: block !important; }
+          .user-name { display: none; }
+        }
       `}</style>
     </div>
   );
