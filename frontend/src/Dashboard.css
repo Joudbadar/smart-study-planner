@@ -19,7 +19,6 @@ body {
   align-items: center;
   position: sticky;
   top: 0;
-   height: 120px;
   z-index: 100;
 }
 
@@ -422,4 +421,13 @@ body {
   .sidebar { display: none; }
   .stats-grid { grid-template-columns: 1fr; }
   .bottom-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 768px) {
+  .header {
+    padding: 0.8rem 1rem;
+  }
+
+  .logo {
+    font-size: 1.1rem;
+  }
 }
