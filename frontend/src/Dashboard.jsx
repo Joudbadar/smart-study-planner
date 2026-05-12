@@ -56,9 +56,13 @@ export default function Dashboard() {
   };
 
   // ── Stats ──
-  const completedCount = weekSessions.filter(s => s.status === 'completed').length;
-  const totalCount     = weekSessions.length;
-  const completionRate = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+  const completedSessions = weekSessions.filter(s => s.status === 'completed').length;
+const completedTasks    = deadlines.filter(t => t.completed).length;
+const totalSessions     = weekSessions.length;
+const totalTasks        = deadlines.length;
+const totalCount        = totalSessions + totalTasks;
+const completedCount    = completedSessions + completedTasks;
+const completionRate    = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
   const studyHours     = weekSessions.reduce((sum, s) => {
     if (!s.time) return sum;
     const [start, end] = s.time.split(' - ');

@@ -125,9 +125,13 @@ const markMissed = async (id) => {
   const OVERALL_RATE = totalItems === 0 ? 0 : Math.round((completedItems / totalItems) * 100);
 
   const coursesWithPercentage = courses.map(course => {
-    const courseTasks = tasks.filter(t => t.course === course.name);
-    const courseSessions = studySessions.filter(s => s.course === course.name);
-    
+   const courseTasks = tasks.filter(t => 
+  t.course === course.name || t.course === course.code
+);
+    const courseSessions = studySessions.filter(s => 
+    s.course === course.name || s.course === course.code
+  );
+      
     const total = courseTasks.length + courseSessions.length;
     const completed = 
       courseTasks.filter(t => t.completed).length + 

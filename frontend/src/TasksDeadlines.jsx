@@ -3,7 +3,7 @@ import { getAuth } from 'firebase/auth';
 import { fetchTasks, addTask, updateTask, deleteTask } from './services/TaskService';
 import './ScheduleAndTasks.css';
 
-const EMPTY_FORM = { title: '', course: '', dueDate: '', priority: 'medium' };
+const EMPTY_FORM = { title: '', course: '', dueDate: '', dueDay: '', dueMonth: '', dueYear: '2026', priority: 'medium' };
 
 export default function TasksDeadlines() {
   const [deadlines, setDeadlines] = useState([]);
@@ -33,8 +33,11 @@ export default function TasksDeadlines() {
   };
 
   const handleAdd = async () => {
-    if (!form.title || !form.course || !form.dueDate)
-      return alert('Please fill in Title, Course, and Due Date.');
+    if (!form.title)    return alert('Please enter a title.');
+    if (!form.course)   return alert('Please enter a course.');
+    if (!form.dueDay)   return alert('Please select a day.');
+    if (!form.dueMonth) return alert('Please select a month.');
+    if (!form.dueDate)  return alert('Please select both day and month.');
 
     const newTask = {
       title: form.title,
@@ -88,12 +91,57 @@ export default function TasksDeadlines() {
             />
 
             <label className="modal-label">Due Date <span className="modal-required">*</span></label>
-            <input
-              className="modal-input"
-              type="date"
-              value={form.dueDate}
-              onChange={e => setForm({ ...form, dueDate: e.target.value })}
-            />
+            <div className="modal-row">
+              <div className="modal-col">
+                <select
+                  className="modal-input"
+                  value={form.dueDay}
+                  onChange={e => setForm(prev => ({
+                    ...prev,
+                    dueDay: e.target.value,
+                    dueDate: prev.dueMonth ? `${prev.dueYear}-${prev.dueMonth}-${e.target.value}` : ''
+                  }))}
+                >
+                  <option value="">Day</option>
+                  {Array.from({length: 31}, (_, i) => i + 1).map(d => (
+                    <option key={d} value={String(d).padStart(2,'0')}>{d}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="modal-col">
+                <select
+                  className="modal-input"
+                  value={form.dueMonth}
+                  onChange={e => setForm(prev => ({
+                    ...prev,
+                    dueMonth: e.target.value,
+                    dueDate: prev.dueDay ? `${prev.dueYear}-${e.target.value}-${prev.dueDay}` : ''
+                  }))}
+                >
+                  <option value="">Month</option>
+                  {['01','02','03','04','05','06','07','08','09','10','11','12'].map((m, i) => (
+                    <option key={m} value={m}>
+                      {['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][i]}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="modal-col">
+                <select
+                  className="modal-input"
+                  value={form.dueYear}
+                  onChange={e => setForm(prev => ({
+                    ...prev,
+                    dueYear: e.target.value,
+                    dueDate: (prev.dueDay && prev.dueMonth) ? `${e.target.value}-${prev.dueMonth}-${prev.dueDay}` : ''
+                  }))}
+                >
+                  <option value="2026">2026</option>
+                  <option value="2027">2027</option>
+                  <option value="2028">2028</option>
+                </select>
+              </div>
+            </div>
 
             <label className="modal-label">Priority</label>
             <select
