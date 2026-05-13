@@ -1,33 +1,40 @@
 .wa-page {
   padding: 2rem;
+  background: #fdf3ef;
+  min-height: 100vh;
 }
 
 .wa-title {
-  font-size: 2rem;
-  font-weight: 700;
+  text-align: center;
+  font-size: 3.5rem;
+  font-weight: 800;
   color: #2d2d2d;
   margin-bottom: 0.5rem;
 }
 
 .wa-subtitle {
-  color: #7a7a7a;
+  text-align: center;
+  color: #666;
+  font-size: 1.2rem;
   margin-bottom: 2rem;
 }
 
 .wa-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 1.2rem;
+  max-width: 950px;
+  margin: auto;
 }
 
 .wa-card {
   background: white;
-  border-radius: 16px;
-  padding: 1.4rem 1rem;
+  border-radius: 18px;
+  padding: 1.5rem 1rem;
   text-align: center;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.06);
-  border: 2px solid transparent;
-  transition: 0.3s ease;
+  border: 2px solid #e5e5e5;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+  transition: 0.25s ease;
   cursor: pointer;
 }
 
@@ -36,62 +43,142 @@
 }
 
 .wa-available {
-  background: #eef8e9;
-  border-color: #9ac47b;
+  background: #f5faef;
+  border-color: #b8d892;
 }
 
 .wa-unavailable {
-  background: #f3f3f3;
-  border-color: #cfcfcf;
+  background: #ffffff;
+  border-color: #e3e3e3;
 }
 
 .wa-day {
-  font-size: 1.3rem;
-  font-weight: 700;
+  font-size: 2rem;
+  font-weight: 800;
   color: #2d2d2d;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.8rem;
 }
 
 .wa-time {
-  font-size: 1rem;
   color: #666;
-  margin-bottom: 0.7rem;
+  font-size: 1.05rem;
+  margin-bottom: 1rem;
 }
 
 .wa-status {
   display: inline-block;
-  font-size: 0.85rem;
-  font-weight: 600;
-  padding: 6px 12px;
-  border-radius: 20px;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.95rem;
 }
 
 .available-text {
-  background: #dff2d8;
-  color: #2e7d32;
+  background: #dcecc7;
+  color: #5d8b35;
 }
 
 .unavailable-text {
-  background: #e0e0e0;
-  color: #666;
+  background: #ececec;
+  color: #777;
 }
 
 .wa-actions {
+  display: flex;
+  justify-content: center;
   margin-top: 2rem;
 }
 
 .wa-btn {
-  padding: 0.9rem 1.6rem;
-  border: none;
-  border-radius: 12px;
   background: linear-gradient(135deg, #e67a5f, #ee9b85);
   color: white;
+  border: none;
+  border-radius: 14px;
+  padding: 1rem 2.5rem;
   font-size: 1rem;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 4px 15px rgba(230,122,95,0.25);
+  box-shadow: 0 8px 20px rgba(230, 122, 95, 0.25);
+  transition: 0.25s ease;
 }
 
 .wa-btn:hover {
   transform: translateY(-2px);
+}
+
+.wa-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.wa-modal {
+  background: white;
+  width: 420px;
+  max-width: 90%;
+  border-radius: 24px;
+  padding: 2rem;
+  box-shadow: 0 25px 70px rgba(0,0,0,0.2);
+}
+
+.wa-modal h2 {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  color: #2d2d2d;
+}
+
+.wa-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: #2d2d2d;
+}
+
+.wa-modal-label {
+  display: block;
+  margin: 1rem 0 0.5rem;
+  font-weight: 700;
+  color: #2d2d2d;
+}
+
+.wa-modal-input {
+  width: 100%;
+  padding: 0.9rem;
+  border-radius: 14px;
+  border: 1px solid #f0d5cf;
+  background: #fef6f4;
+  font-size: 1rem;
+}
+
+.wa-modal-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.wa-cancel-btn,
+.wa-save-btn {
+  flex: 1;
+  padding: 0.9rem;
+  border: none;
+  border-radius: 14px;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.wa-cancel-btn {
+  background: #f1f1f1;
+  color: #777;
+}
+
+.wa-save-btn {
+  background: linear-gradient(135deg, #e67a5f, #ee9b85);
+  color: white;
 }
