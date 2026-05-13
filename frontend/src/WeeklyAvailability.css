@@ -131,13 +131,49 @@
   color: #2d2d2d;
 }
 
+.wa-check-group {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
 .wa-check {
+  flex: 1;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 10px;
+
   font-weight: 700;
-  margin-bottom: 1rem;
   color: #2d2d2d;
+
+  padding: 0.8rem;
+
+  border-radius: 14px;
+  border: 2px solid #ececec;
+
+  background: #fafafa;
+
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.wa-check input {
+  width: 18px;
+  height: 18px;
+  accent-color: #e67a5f;
+}
+
+.wa-active-check {
+  background: #eef8e5;
+  border-color: #a8d27f;
+  color: #5f8d39;
+}
+
+.wa-active-uncheck {
+  background: #f3f3f3;
+  border-color: #d9d9d9;
+  color: #777;
 }
 
 .wa-modal-label {
@@ -181,4 +217,15 @@
 .wa-save-btn {
   background: linear-gradient(135deg, #e67a5f, #ee9b85);
   color: white;
+}
+.wa-modal {
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.wa-modal-actions {
+  position: sticky;
+  bottom: 0;
+  background: white;
+  padding-top: 1rem;
 }
