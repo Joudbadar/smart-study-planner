@@ -29,11 +29,7 @@ export default function WelcomePage() {
               Transform your study routine with AI-powered scheduling, personalized plans, and progress tracking. 
               Stay organized, meet deadlines, and achieve your academic goals effortlessly.
             </p>
-            <div className="hero-buttons">
-              <Link to="/create-account" className="btn btn-primary">
-                Start Planning for Free
-              </Link>
-            </div>
+           
           </div>
 
           <div className="hero-visual">
@@ -146,8 +142,8 @@ export default function WelcomePage() {
             Join thousands of students who are studying smarter, not harder.
           </p>
           <div className="cta-buttons">
-            <Link to="/create-account" className="btn btn-white">Get Started Free</Link>
-            <a href="#" className="btn btn-secondary">Learn More →</a>
+            <Link to="/create-account" className="btn btn-white">Get Started</Link>
+         
           </div>
         </section>
 
