@@ -63,7 +63,7 @@ export default function TasksDeadlines() {
     <div className="tasks-deadlines-wrapper">
 
       <div className="tasks-header">
-        <h1 className="tasks-title">⚠️ Tasks & Deadlines</h1>
+        <h1 className="tasks-title">Tasks & Deadlines</h1>
         <button className="add-task-button" onClick={() => setShowForm(true)}>
           + Add Task
         </button>

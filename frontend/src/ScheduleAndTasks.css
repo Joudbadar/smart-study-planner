@@ -93,8 +93,8 @@
   background: white;
   border-radius: 10px;
   padding: 10px;
-  min-width: 130px;
-  flex-shrink: 0;
+ flex: 1;
+min-width: 0; 
 }
 
 .day-column-header {
@@ -365,9 +365,9 @@
 
 /* Task info */
 .task-info-section { flex: 1; min-width: 0; }
-.task-title        { font-weight: 700; font-size: 14px; }
-.task-course-name  { font-size: 12px; color: #666; margin: 3px 0; }
-.task-due-date     { font-size: 11px; color: #999; }
+.task-title { font-weight: 700; font-size: 17px; }
+.task-course-name { font-size: 14px; color: #666; margin: 3px 0; }
+.task-due-date { font-size: 13px; color: #999; }
 
 /* Action buttons */
 .task-action-buttons { display: flex; gap: 6px; flex-shrink: 0; }
@@ -546,3 +546,13 @@
   .task-title { font-size: 13px; }
 }
 
+@media (max-width: 768px) {
+  .weekly-calendar-grid {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .calendar-day-column {
+    flex: 0 0 130px;
+    min-width: 130px;
+  }
+}

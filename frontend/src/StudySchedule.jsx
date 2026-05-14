@@ -107,7 +107,7 @@ export default function StudySchedule() {
     <div className="study-schedule-wrapper">
 
       <div className="schedule-header">
-        <h1 className="schedule-title">📅 Study Schedule</h1>
+        <h1 className="schedule-title">Study Schedule</h1>
         <button className="add-session-button" onClick={() => setShowForm(true)}>
           + Add Session
         </button>
