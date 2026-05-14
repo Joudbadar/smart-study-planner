@@ -15,8 +15,6 @@
   flex-direction: column;
 }
 
-
-
 .schedule-header {
   display: flex;
   justify-content: space-between;
@@ -40,10 +38,7 @@
   transition: opacity 0.3s;
   white-space: nowrap;
 }
-
-.add-session-button:hover {
-  opacity: 0.9;
-}
+.add-session-button:hover { opacity: 0.9; }
 
 /* Statistics */
 .statistics-container {
@@ -57,14 +52,11 @@
   padding: 16px 24px;
   border-radius: 12px;
   text-align: center;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.06);
   transition: transform 0.3s;
   flex: 1;
 }
-
-.statistic-card:hover {
-  transform: translateY(-5px);
-}
+.statistic-card:hover { transform: translateY(-5px); }
 
 .statistic-number {
   font-size: 28px;
@@ -93,8 +85,8 @@
   background: white;
   border-radius: 10px;
   padding: 10px;
- flex: 1;
-min-width: 0; 
+  flex: 1;
+  min-width: 0;
 }
 
 .day-column-header {
@@ -138,31 +130,11 @@ min-width: 0;
   text-decoration: line-through;
 }
 
-.session-time {
-  font-size: 10px;
-  font-weight: 600;
-  color: #e67a5f;
-}
+.session-time   { font-size: 10px; font-weight: 600; color: #e67a5f; }
+.session-course { font-weight: 700; font-size: 12px; margin: 3px 0; }
+.session-task   { font-size: 10px; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-.session-course {
-  font-weight: 700;
-  font-size: 12px;
-  margin: 3px 0;
-}
-
-.session-task {
-  font-size: 10px;
-  color: #666;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.session-actions {
-  display: flex;
-  gap: 5px;
-  margin-top: 5px;
-}
+.session-actions { display: flex; gap: 5px; margin-top: 5px; }
 
 .complete-session-button,
 .delete-session-button {
@@ -174,16 +146,12 @@ min-width: 0;
   font-size: 11px;
   transition: transform 0.2s;
 }
-
 .complete-session-button:hover,
-.delete-session-button:hover {
-  transform: scale(1.05);
-}
-
+.delete-session-button:hover { transform: scale(1.05); }
 .complete-session-button { background: #e8f5e9; color: #4caf50; }
 .delete-session-button   { background: #ffebee; color: #f44336; }
 
-/* ── Week Navigation ── */
+/* Week Navigation */
 .week-nav {
   display: flex;
   align-items: center;
@@ -192,7 +160,7 @@ min-width: 0;
   border-radius: 12px;
   padding: 12px 20px;
   margin-bottom: 20px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.06);
 }
 
 .week-nav-btn {
@@ -207,7 +175,6 @@ min-width: 0;
   font-size: 13px;
   white-space: nowrap;
 }
-
 .week-nav-btn:hover { opacity: 0.9; }
 
 .week-nav-label {
@@ -265,7 +232,6 @@ min-width: 0;
   transition: opacity 0.3s;
   white-space: nowrap;
 }
-
 .add-task-button:hover { opacity: 0.9; }
 
 /* Statistics cards */
@@ -281,10 +247,9 @@ min-width: 0;
   border-radius: 12px;
   text-align: center;
   flex: 1;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.06);
   transition: transform 0.3s;
 }
-
 .statistic-card-item:hover { transform: translateY(-5px); }
 
 .statistic-label-text {
@@ -319,6 +284,19 @@ min-width: 0;
   border-color: #e67a5f;
 }
 
+/* Completed filter button gets a green tint */
+.filter-button.completed-filter {
+  background: #e8f5e9;
+  border-color: #a5d6a7;
+  color: #4caf50;
+}
+.filter-button.completed-filter.active,
+.filter-button.completed-filter:hover {
+  background: #4caf50;
+  color: white;
+  border-color: #4caf50;
+}
+
 /* Task cards */
 .deadlines-list-container {
   display: flex;
@@ -337,16 +315,28 @@ min-width: 0;
   align-items: center;
   gap: 14px;
   border-left: 4px solid;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.06);
   transition: transform 0.3s;
 }
-
 .deadline-task-card:hover { transform: translateY(-3px); }
 
 .deadline-task-card.high   { border-left-color: #f44336; }
 .deadline-task-card.medium { border-left-color: #ff9800; }
 .deadline-task-card.low    { border-left-color: #4caf50; }
-.deadline-task-card.task-completed { opacity: 0.5; }
+
+/* Completed task — only visible in Completed filter */
+.deadline-task-card.task-completed {
+  border-left-color: #4caf50;
+  background: #f9fdf9;
+}
+.deadline-task-card.task-completed .task-title {
+  text-decoration: line-through;
+  color: #aaa;
+}
+.deadline-task-card.task-completed .task-course-name,
+.deadline-task-card.task-completed .task-due-date {
+  color: #bbb;
+}
 
 /* Priority badges */
 .priority-badge {
@@ -358,16 +348,16 @@ min-width: 0;
   text-align: center;
   flex-shrink: 0;
 }
-
-.priority-badge.high   { background: #ffebee; color: #f44336; }
-.priority-badge.medium { background: #fff3e0; color: #ff9800; }
-.priority-badge.low    { background: #e8f5e9; color: #4caf50; }
+.priority-badge.high      { background: #ffebee; color: #f44336; }
+.priority-badge.medium    { background: #fff3e0; color: #ff9800; }
+.priority-badge.low       { background: #e8f5e9; color: #4caf50; }
+.priority-badge.completed { background: #e8f5e9; color: #4caf50; }
 
 /* Task info */
 .task-info-section { flex: 1; min-width: 0; }
-.task-title { font-weight: 700; font-size: 17px; }
-.task-course-name { font-size: 14px; color: #666; margin: 3px 0; }
-.task-due-date { font-size: 13px; color: #999; }
+.task-title        { font-weight: 700; font-size: 17px; }
+.task-course-name  { font-size: 14px; color: #666; margin: 3px 0; }
+.task-due-date     { font-size: 13px; color: #999; }
 
 /* Action buttons */
 .task-action-buttons { display: flex; gap: 6px; flex-shrink: 0; }
@@ -383,7 +373,6 @@ min-width: 0;
   font-size: 12px;
   transition: transform 0.2s;
 }
-
 .complete-task-button:hover,
 .edit-task-button:hover,
 .delete-task-button:hover { transform: scale(1.05); }
@@ -400,7 +389,7 @@ min-width: 0;
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.35);
+  background: rgba(0,0,0,0.35);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -416,7 +405,7 @@ min-width: 0;
   max-width: 440px;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.15);
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -451,20 +440,12 @@ min-width: 0;
   outline: none;
   transition: background 0.2s;
 }
-
 .modal-input::placeholder { color: #c4a49e; }
-.modal-input:focus { background: #fae4de; }
+.modal-input:focus        { background: #fae4de; }
+.modal-input:disabled     { opacity: 0.45; cursor: not-allowed; }
 
-.modal-row {
-  display: flex;
-  gap: 12px;
-}
-
-.modal-col {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
+.modal-row { display: flex; gap: 12px; }
+.modal-col { flex: 1; display: flex; flex-direction: column; }
 
 .modal-actions {
   display: flex;
@@ -484,7 +465,6 @@ min-width: 0;
   color: #888;
   transition: background 0.2s;
 }
-
 .modal-cancel:hover { background: #e0e0e0; }
 
 .modal-save {
@@ -499,7 +479,6 @@ min-width: 0;
   font-size: 14px;
   transition: opacity 0.2s;
 }
-
 .modal-save:hover { opacity: 0.9; }
 
 
@@ -508,51 +487,36 @@ min-width: 0;
 ════════════════════════════════ */
 
 @media (max-width: 768px) {
-  /* Schedule */
   .study-schedule-wrapper { padding: 12px; }
-  .schedule-title { font-size: 18px; }
-  .add-session-button { padding: 7px 12px; font-size: 13px; }
+  .schedule-title          { font-size: 18px; }
+  .add-session-button      { padding: 7px 12px; font-size: 13px; }
+  .week-nav                { padding: 10px 12px; }
+  .week-nav-btn            { padding: 6px 10px; font-size: 12px; }
+  .week-nav-label          { font-size: 13px; }
+  .statistics-container    { gap: 8px; }
+  .statistic-card          { padding: 12px 8px; }
+  .statistic-number        { font-size: 22px; }
+  .statistic-label         { font-size: 11px; }
 
-  /* Week nav */
-  .week-nav { padding: 10px 12px; }
-  .week-nav-btn { padding: 6px 10px; font-size: 12px; }
-  .week-nav-label { font-size: 13px; }
-
-  /* Stats */
-  .statistics-container { gap: 8px; }
-  .statistic-card { padding: 12px 8px; }
-  .statistic-number { font-size: 22px; }
-  .statistic-label { font-size: 11px; }
-
-  /* Tasks */
-  .tasks-deadlines-wrapper { padding: 12px; }
-  .tasks-title { font-size: 18px; }
-  .add-task-button { padding: 7px 12px; font-size: 13px; }
+  .tasks-deadlines-wrapper  { padding: 12px; }
+  .tasks-title              { font-size: 18px; }
+  .add-task-button          { padding: 7px 12px; font-size: 13px; }
   .statistics-cards-container { gap: 8px; }
-  .statistic-card-item { padding: 12px 8px; }
-  .statistic-label-text { font-size: 11px; }
+  .statistic-card-item      { padding: 12px 8px; }
+  .statistic-label-text     { font-size: 11px; }
 
-  /* Modal */
-  .modal-card { padding: 20px 16px; border-radius: 16px; }
-  .modal-title { font-size: 18px; }
-  .modal-input { padding: 10px 12px; font-size: 13px; }
-  .modal-row { gap: 8px; }
+  .modal-card   { padding: 20px 16px; border-radius: 16px; }
+  .modal-title  { font-size: 18px; }
+  .modal-input  { padding: 10px 12px; font-size: 13px; }
+  .modal-row    { gap: 8px; }
+
+  .weekly-calendar-grid  { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .calendar-day-column   { flex: 0 0 130px; min-width: 130px; }
 }
 
 @media (max-width: 480px) {
   .filter-buttons-container { justify-content: center; }
-  .statistic-number { font-size: 20px; }
-  .deadline-task-card { padding: 10px; gap: 8px; }
-  .task-title { font-size: 13px; }
-}
-
-@media (max-width: 768px) {
-  .weekly-calendar-grid {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-  .calendar-day-column {
-    flex: 0 0 130px;
-    min-width: 130px;
-  }
+  .statistic-number         { font-size: 20px; }
+  .deadline-task-card       { padding: 10px; gap: 8px; }
+  .task-title               { font-size: 13px; }
 }

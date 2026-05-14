@@ -1,8 +1,4 @@
 // courseService.js
-// ─────────────────────────────────────────────────────────────
-// All Firestore operations scoped to each user's subcollection:
-//   users/{uid}/courses/{courseId}
-// ─────────────────────────────────────────────────────────────
 import {
   collection,
   getDocs,
@@ -10,32 +6,69 @@ import {
   updateDoc,
   deleteDoc,
   doc,
+  writeBatch,
 } from "firebase/firestore";
 import { db } from "./firebase";
 
-/** Returns a reference to the current user's courses subcollection */
 const coursesRef = (uid) => collection(db, "users", uid, "courses");
 
-/** Fetch all courses for a given user */
 export async function fetchCourses(uid) {
   const snapshot = await getDocs(coursesRef(uid));
   return snapshot.docs
     .map((d) => ({ id: d.id, ...d.data() }))
-    .filter((course) => course.name); // skip incomplete/empty documents
+    .filter((course) => course.name);
 }
 
-/** Add a new course for a given user; returns the new Firestore document id */
 export async function addCourse(uid, data) {
   const ref = await addDoc(coursesRef(uid), data);
   return ref.id;
 }
 
-/** Update an existing course for a given user */
 export async function updateCourse(uid, id, data) {
   await updateDoc(doc(db, "users", uid, "courses", id), data);
 }
 
-/** Delete a course for a given user */
 export async function deleteCourse(uid, id) {
   await deleteDoc(doc(db, "users", uid, "courses", id));
+}
+
+/**
+ * After editing a course's code/name, propagate the new label
+ * to every task and session stored under that course.
+ *
+ * Affected fields:
+ *   - tasks:    { course: "CODE – Name" }
+ *   - sessions: { course: "CODE – Name" }
+ */
+export async function propagateCourseEdit(uid, courseId, newCode, newName) {
+  const newLabel = newCode && newName
+    ? `${newCode} – ${newName}`
+    : newCode || newName || '';
+
+  const batch = writeBatch(db);
+
+  const tasksSnap = await getDocs(
+    collection(db, "users", uid, "courses", courseId, "tasks")
+  );
+
+  for (const taskDoc of tasksSnap.docs) {
+    // Update course label on the task itself
+    batch.update(
+      doc(db, "users", uid, "courses", courseId, "tasks", taskDoc.id),
+      { course: newLabel }
+    );
+
+    // Update course label on every session under this task
+    const sessionsSnap = await getDocs(
+      collection(db, "users", uid, "courses", courseId, "tasks", taskDoc.id, "sessions")
+    );
+    for (const sessionDoc of sessionsSnap.docs) {
+      batch.update(
+        doc(db, "users", uid, "courses", courseId, "tasks", taskDoc.id, "sessions", sessionDoc.id),
+        { course: newLabel }
+      );
+    }
+  }
+
+  await batch.commit();
 }

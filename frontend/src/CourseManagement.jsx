@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { getAuth } from "firebase/auth";
 import "./CourseManagement.css";
-import { fetchCourses, addCourse, updateCourse, deleteCourse } from "./services/CourseService";
+import { fetchCourses, addCourse, updateCourse, deleteCourse, propagateCourseEdit } from "./services/CourseService";
 
 const emptyForm = { name: "", code: "", instructor: "", creditHours: "", hoursPerWeek: "", semester: "", difficulty: "" };
 
@@ -18,24 +18,18 @@ const DIFF_STYLES = {
 };
 
 export default function CourseManagement() {
-  const [courses, setCourses]     = useState([]);
-  const [loading, setLoading]     = useState(true);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editingId, setEditingId] = useState(null);
-  const [form, setForm]           = useState(emptyForm);
-  const [errors, setErrors]       = useState({});
+  const [courses, setCourses]         = useState([]);
+  const [loading, setLoading]         = useState(true);
+  const [modalOpen, setModalOpen]     = useState(false);
+  const [editingId, setEditingId]     = useState(null);
+  const [form, setForm]               = useState(emptyForm);
+  const [errors, setErrors]           = useState({});
+  const [propagating, setPropagating] = useState(false);
 
-  // ─── Get the current user's uid from Firebase Auth ──────────
-  // Once you implement login this will automatically return the
-  // real uid. Until then it returns null and no data loads.
   const uid = getAuth().currentUser?.uid;
 
-  // ─── Load this user's courses from Firestore on mount ───────
   useEffect(() => {
-    if (!uid) {
-      setLoading(false);
-      return;
-    }
+    if (!uid) { setLoading(false); return; }
     (async () => {
       try {
         const data = await fetchCourses(uid);
@@ -87,7 +81,6 @@ export default function CourseManagement() {
     return e;
   };
 
-  // ─── Save: add or update in Firestore under the user's uid ──
   const handleSave = async () => {
     const e = validate();
     if (Object.keys(e).length) { setErrors(e); return; }
@@ -102,6 +95,18 @@ export default function CourseManagement() {
       if (editingId !== null) {
         await updateCourse(uid, editingId, data);
         setCourses(cs => cs.map(c => c.id === editingId ? { id: editingId, ...data } : c));
+
+        const original = courses.find(c => c.id === editingId);
+        if (original?.code !== form.code || original?.name !== form.name) {
+          setPropagating(true);
+          try {
+            await propagateCourseEdit(uid, editingId, form.code, form.name);
+          } catch (err) {
+            console.error("Failed to propagate course edit:", err);
+          } finally {
+            setPropagating(false);
+          }
+        }
       } else {
         const newId = await addCourse(uid, data);
         setCourses(cs => [...cs, { id: newId, ...data }]);
@@ -113,7 +118,6 @@ export default function CourseManagement() {
     closeModal();
   };
 
-  // ─── Remove: delete from Firestore under the user's uid ─────
   const handleRemove = async (id) => {
     if (!window.confirm("Remove this course?")) return;
     try {
@@ -124,7 +128,6 @@ export default function CourseManagement() {
     }
   };
 
-  // ─── Render ──────────────────────────────────────────────────
   return (
     <div className="cm-root">
       <div className="cm-bg-texture" />
@@ -141,21 +144,24 @@ export default function CourseManagement() {
         <button className="cm-add-btn" onClick={openAdd}>＋ Add Course</button>
       </div>
 
-      {/* ── Loading state ── */}
+      {propagating && (
+        <p style={{ textAlign: "center", color: "#7a7a7a", padding: "8px 0" }}>
+          Updating tasks and sessions…
+        </p>
+      )}
+
       {loading && (
         <p style={{ textAlign: "center", color: "#7a7a7a", padding: "40px 0" }}>
           Loading courses…
         </p>
       )}
 
-      {/* ── Not logged in ── */}
       {!loading && !uid && (
         <p style={{ textAlign: "center", color: "#7a7a7a", padding: "40px 0" }}>
           Please log in to view your courses.
         </p>
       )}
 
-      {/* ── Course cards grid ── */}
       {!loading && uid && (
         <div className="cm-courses-grid">
           {courses.length === 0 && (
@@ -209,7 +215,6 @@ export default function CourseManagement() {
         </div>
       )}
 
-      {/* ── Modal ── */}
       {modalOpen && (
         <div className="cm-overlay" onClick={(e) => e.target === e.currentTarget && closeModal()}>
           <div className="cm-modal">

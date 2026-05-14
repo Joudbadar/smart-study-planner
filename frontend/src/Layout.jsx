@@ -25,8 +25,7 @@ export default function Layout({ children }) {
   const profileRef = useRef(null);
   const menuRef = useRef(null);
 
-  // Close mobile menu on route change
-  useEffect(() => { setMenuOpen(false); }, [location.pathname]);
+  // No useEffect needed — menu is closed via onClick on each Link
 
   useEffect(() => {
     const auth = getAuth();
