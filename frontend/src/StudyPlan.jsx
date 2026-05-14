@@ -1,208 +1,263 @@
 import { useEffect, useState } from "react";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "./services/firebase";
+import { fetchAllTasks } from "./services/TaskService";
+import { fetchCourses } from "./services/CourseService";
 import "./StudyPlan.css";
 
-const weekDays = [
-  "Sunday",
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-];
+const WEEK_DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 function StudyPlan() {
   const [availability, setAvailability] = useState([]);
-  const [selectedDay, setSelectedDay] = useState("");
-  const [taskName, setTaskName] = useState("");
-  const [duration, setDuration] = useState("1");
-  const [studyPlan, setStudyPlan] = useState([]);
+  const [tasks, setTasks]               = useState([]);
+  const [courses, setCourses]           = useState([]);
+  const [studyPlan, setStudyPlan]       = useState([]);
+  const [loading, setLoading]           = useState(true);
+  const [uid, setUid]                   = useState(null);
+  const [generating, setGenerating]     = useState(false);
 
-  useEffect(() => {
-    const savedPlans = JSON.parse(localStorage.getItem("studyPlans")) || [];
-    setStudyPlan(savedPlans);
-  }, []);
-
+  // ── Load data on auth ──
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (!user) return;
+      if (!user) { setLoading(false); return; }
+      setUid(user.uid);
 
-      const ref = doc(db, "users", user.uid, "settings", "weeklyAvailability");
-      const snapshot = await getDoc(ref);
-
-      if (snapshot.exists()) {
-        const data = snapshot.data().availability || [];
-
-        const fixedData = data.map((day) => ({
+      // 1. Load availability
+      const availRef  = doc(db, "users", user.uid, "settings", "weeklyAvailability");
+      const availSnap = await getDoc(availRef);
+      if (availSnap.exists()) {
+        const data = availSnap.data().availability || [];
+        setAvailability(data.map(day => ({
           day: day.day,
-          slots: day.slots
-            ? day.slots
-            : day.startTime || day.endTime
-            ? [
-                {
-                  startTime: day.startTime || "",
-                  endTime: day.endTime || "",
-                  available: day.available ?? false,
-                },
-              ]
-            : [],
-        }));
-
-        setAvailability(fixedData);
+          slots: day.slots || [],
+        })));
       }
-    });
 
+      // 2. Load tasks
+      const allTasks = await fetchAllTasks(user.uid);
+      setTasks(allTasks);
+
+      // 3. Load courses
+      const allCourses = await fetchCourses(user.uid);
+      setCourses(allCourses);
+
+      // 4. Load saved plan
+      const planRef  = doc(db, "users", user.uid, "settings", "studyPlan");
+      const planSnap = await getDoc(planRef);
+      if (planSnap.exists()) {
+        setStudyPlan(planSnap.data().plan || []);
+      }
+
+      setLoading(false);
+    });
     return () => unsubscribe();
   }, []);
 
-  const availableDays = availability.filter((day) =>
-    day.slots?.some((slot) => slot.available)
-  );
-
+  // ── Helper: add hours to time string ──
   const addHours = (time, hours) => {
     const [h, m] = time.split(":").map(Number);
-    const totalMinutes = h * 60 + m + Number(hours) * 60;
-
-    const newHours = Math.floor(totalMinutes / 60)
-      .toString()
-      .padStart(2, "0");
-
-    const newMinutes = Math.floor(totalMinutes % 60)
-      .toString()
-      .padStart(2, "0");
-
-    return `${newHours}:${newMinutes}`;
+    const total  = h * 60 + m + Math.round(Number(hours) * 60);
+    return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
   };
 
-  const generatePlan = () => {
-    if (!selectedDay || !taskName || !duration) {
-      alert("Please select a day, enter a task, and choose duration.");
+  // ── Generate plan automatically ──
+  const generatePlan = async () => {
+    if (!uid) return;
+    setGenerating(true);
+
+    const availableDays = availability.filter(d => d.slots?.some(s => s.available));
+
+    if (availableDays.length === 0) {
+      alert("Please set your weekly availability first!");
+      setGenerating(false);
       return;
     }
 
-    const day = availability.find((item) => item.day === selectedDay);
-    const availableSlot = day?.slots?.find((slot) => slot.available);
-
-    if (!availableSlot) {
-      alert("No available time slot for this day.");
+    if (tasks.length === 0) {
+      alert("Please add some tasks/deadlines first!");
+      setGenerating(false);
       return;
     }
 
-    const startTime = availableSlot.startTime;
-    const endTime = addHours(startTime, duration);
+    // Sort tasks by due date (soonest first = highest priority)
+    const sortedTasks = [...tasks]
+      .filter(t => !t.completed)
+      .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
 
-    if (endTime > availableSlot.endTime) {
-      alert("The task duration is longer than the available time slot.");
-      return;
+    const generatedPlan = [];
+    let dayIndex = 0;
+
+    for (const task of sortedTasks) {
+      // Find the next available day with a free slot
+      let assigned = false;
+      let attempts = 0;
+
+      while (!assigned && attempts < availableDays.length) {
+        const day = availableDays[dayIndex % availableDays.length];
+        const slot = day.slots.find(s => s.available);
+
+        if (slot) {
+          // Check if this slot is already used
+          const alreadyUsed = generatedPlan.find(
+            p => p.day === day.day && p.startTime === slot.startTime
+          );
+
+          if (!alreadyUsed) {
+            const endTime = addHours(slot.startTime, 1); // default 1 hour per task
+
+            // Make sure end time doesn't exceed slot end
+            if (endTime <= slot.endTime) {
+              generatedPlan.push({
+                id: Date.now() + Math.random(),
+                day: day.day,
+                startTime: slot.startTime,
+                endTime,
+                task: task.title,
+                course: task.course,
+                dueDate: task.dueDate,
+                priority: task.priority || 'medium',
+              });
+              assigned = true;
+            }
+          }
+        }
+
+        dayIndex++;
+        attempts++;
+      }
     }
 
-    const newPlan = {
-      id: Date.now(),
-      day: selectedDay,
-      task: taskName,
-      startTime,
-      endTime,
-      duration,
-    };
+    // Save to Firestore
+    const planRef = doc(db, "users", uid, "settings", "studyPlan");
+    await setDoc(planRef, {
+      plan: generatedPlan,
+      generatedAt: new Date().toISOString(),
+    });
 
-    const updatedPlans = [...studyPlan, newPlan];
-
-    setStudyPlan(updatedPlans);
-    localStorage.setItem("studyPlans", JSON.stringify(updatedPlans));
-
-    setTaskName("");
-    setDuration("1");
+    setStudyPlan(generatedPlan);
+    setGenerating(false);
   };
+
+  const clearPlan = async () => {
+    if (!uid) return;
+    const planRef = doc(db, "users", uid, "settings", "studyPlan");
+    await setDoc(planRef, { plan: [], generatedAt: new Date().toISOString() });
+    setStudyPlan([]);
+  };
+
+  if (loading) return <p style={{ textAlign: 'center', padding: '40px' }}>Loading...</p>;
+
+  const pendingTasks  = tasks.filter(t => !t.completed);
+  const availableDays = availability.filter(d => d.slots?.some(s => s.available));
 
   return (
     <div className="sp-page">
-      <div className="sp-form-card">
-        <h1 className="sp-heading">Generate Study Plan</h1>
-        <p className="sp-note">
-          Based on your weekly availability, select a day and add a study task.
-        </p>
 
-        <div className="sp-form-grid">
-          <div className="sp-form-group">
-            <label>Select Day</label>
-            <select
-              value={selectedDay}
-              onChange={(e) => setSelectedDay(e.target.value)}
-            >
-              <option value="">Choose a day</option>
-              {availableDays.map((day) => (
-                <option key={day.day} value={day.day}>
-                  {day.day}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="sp-form-group">
-            <label>Task / Course Name</label>
-            <input
-              type="text"
-              placeholder="Example: Database Assignment"
-              value={taskName}
-              onChange={(e) => setTaskName(e.target.value)}
-            />
-          </div>
-
-          <div className="sp-form-group">
-            <label>Duration</label>
-            <select
-              value={duration}
-              onChange={(e) => setDuration(e.target.value)}
-            >
-              <option value="0.25">15 minutes</option>
-              <option value="0.5">30 minutes</option>
-              <option value="1">1 hour</option>
-              <option value="1.5">1.5 hours</option>
-              <option value="2">2 hours</option>
-              <option value="2.5">2.5 hours</option>
-              <option value="3">3 hours</option>
-              <option value="4">4 hours</option>
-              <option value="5">5 hours</option>
-            </select>
-          </div>
+      {/* Info Cards */}
+      <div className="sp-info-grid">
+        <div className="sp-info-card">
+          <div className="sp-info-number">{availableDays.length}</div>
+          <div className="sp-info-label">Available Days</div>
         </div>
-
-        <button className="sp-generate-btn" onClick={generatePlan}>
-          Generate Plan
-        </button>
+        <div className="sp-info-card">
+          <div className="sp-info-number">{pendingTasks.length}</div>
+          <div className="sp-info-label">Pending Tasks</div>
+        </div>
+        <div className="sp-info-card">
+          <div className="sp-info-number">{courses.length}</div>
+          <div className="sp-info-label">Courses</div>
+        </div>
+        <div className="sp-info-card">
+          <div className="sp-info-number">{studyPlan.length}</div>
+          <div className="sp-info-label">Scheduled Sessions</div>
+        </div>
       </div>
 
+      {/* Generate Button */}
+      <div className="sp-form-card">
+        <h1 className="sp-heading">📅 Generate Study Plan</h1>
+        <p className="sp-note">
+          The system will automatically generate a weekly study plan based on your
+          pending tasks, deadlines, and weekly availability.
+        </p>
+
+        {pendingTasks.length === 0 && (
+          <p style={{ color: '#e67a5f', marginBottom: '12px' }}>
+            ⚠️ No pending tasks found. Please add tasks in Tasks & Deadlines first.
+          </p>
+        )}
+
+        {availableDays.length === 0 && (
+          <p style={{ color: '#e67a5f', marginBottom: '12px' }}>
+            ⚠️ No availability set. Please update your Weekly Availability first.
+          </p>
+        )}
+
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+          <button
+            className="sp-generate-btn"
+            onClick={generatePlan}
+            disabled={generating || pendingTasks.length === 0 || availableDays.length === 0}
+          >
+            {generating ? '⏳ Generating...' : ' Generate My Study Plan'}
+          </button>
+
+          {studyPlan.length > 0 && (
+            <button
+              className="sp-generate-btn"
+              onClick={clearPlan}
+              style={{ background: '#f0f0f0', color: '#666' }}
+            >
+              🗑 Clear Plan
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Generated Plan */}
       <div className="sp-card">
         <h1 className="sp-heading">Weekly Study Plan</h1>
-        <p className="sp-note">Your generated plans will appear here.</p>
+        <p className="sp-note">
+          {studyPlan.length > 0
+            ? 'Your personalized study plan based on your tasks and availability.'
+            : 'Click "Generate My Study Plan" to create your schedule.'}
+        </p>
 
         <div className="sp-list">
           {studyPlan.length === 0 ? (
             <p className="sp-empty">No study plan generated yet.</p>
           ) : (
-            weekDays.map((day) => {
-              const dayPlans = studyPlan.filter((plan) => plan.day === day);
-
+            WEEK_DAYS.map((day) => {
+              const dayPlans = studyPlan.filter(p => p.day === day);
               if (dayPlans.length === 0) return null;
-
               return (
                 <div className="sp-day-section" key={day}>
                   <h2 className="sp-day-title">{day}</h2>
-
                   {dayPlans.map((plan) => (
                     <div className="sp-session" key={plan.id}>
-                      <p className="sp-session-day">
-                        {plan.startTime} to {plan.endTime}
-                      </p>
-
-                      <p className="sp-session-course">{plan.task}</p>
-
-                      <p className="sp-session-task">
-                        Duration: {Number(plan.duration) * 60} minutes
-                      </p>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <p className="sp-session-day">
+                          🕐 {plan.startTime} – {plan.endTime}
+                        </p>
+                        <span style={{
+                          fontSize: '11px',
+                          padding: '2px 8px',
+                          borderRadius: '12px',
+                          background: plan.priority === 'high' ? '#ffebee' : plan.priority === 'low' ? '#e8f5e9' : '#fff3e0',
+                          color: plan.priority === 'high' ? '#f44336' : plan.priority === 'low' ? '#4caf50' : '#ff9800',
+                          fontWeight: '600',
+                        }}>
+                          {plan.priority}
+                        </span>
+                      </div>
+                      <p className="sp-session-course">📚 {plan.course}</p>
+                      <p className="sp-session-task">📝 {plan.task}</p>
+                      {plan.dueDate && (
+                        <p style={{ fontSize: '11px', color: '#aaa', marginTop: '4px' }}>
+                          📅 Due: {plan.dueDate}
+                        </p>
+                      )}
                     </div>
                   ))}
                 </div>

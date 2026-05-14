@@ -15,6 +15,49 @@
   border: 1px solid rgba(230,122,95,0.08);
 }
 
+
+/* ── Info Cards ── */
+.sp-info-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  max-width: 1100px;
+  margin: 0 auto 2rem;
+}
+
+.sp-info-card {
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  text-align: center;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+  border: 1px solid rgba(230,122,95,0.08);
+  transition: transform 0.2s;
+}
+
+.sp-info-card:hover {
+  transform: translateY(-3px);
+}
+
+.sp-info-number {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #e67a5f;
+  margin-bottom: 4px;
+}
+
+.sp-info-label {
+  font-size: 13px;
+  color: #888;
+  font-weight: 500;
+}
+
+@media (max-width: 600px) {
+  .sp-info-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 .sp-heading {
   text-align: center;
   font-size: 2rem;
