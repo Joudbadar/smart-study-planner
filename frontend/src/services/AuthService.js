@@ -8,9 +8,7 @@ import {
 import { doc, setDoc } from "firebase/firestore";
 import { auth, db } from "./firebase";
 
-/**
- * Sign up a new user
- */
+
 export async function signUp({ fullName, email, password }) {
   const userCredential = await createUserWithEmailAndPassword(auth, email, password);
   const user = userCredential.user;
