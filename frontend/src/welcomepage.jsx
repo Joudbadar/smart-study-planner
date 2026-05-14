@@ -26,7 +26,7 @@ export default function WelcomePage() {
           <div className="hero-content">
             <h1 className="hero-title">Plan Smarter, Study Better 🎯</h1>
             <p className="hero-subtitle">
-              Transform your study routine with AI-powered scheduling, personalized plans, and progress tracking. 
+              Transform your study routine with smart scheduling, personalized plans, and progress tracking. 
               Stay organized, meet deadlines, and achieve your academic goals effortlessly.
             </p>
            
