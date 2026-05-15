@@ -8,10 +8,10 @@ const NAV_ITEMS = [
   { icon: '🏠', label: 'Dashboard', path: '/dashboard' },
   { icon: '📖', label: 'My Courses', path: '/courses' },
   { icon: '✅', label: 'Tasks & Deadlines', path: '/tasks' },
+  { icon: '🕒', label: 'Weekly Availability', path: '/availability' },
   { icon: '📅', label: 'Study Schedule', path: '/schedule' },
   { icon: '📊', label: 'Progress & Analytics', path: '/track' },
-  { icon: '🕒', label: 'Weekly Availability', path: '/availability' },
-  { icon: '📅', label: 'Study Plan', path: '/study-plan' },
+  //{ icon: '📅', label: 'Study Plan', path: '/study-plan' },
 ];
 
 const EMOJI_OPTIONS = ['\u{1F427}', '\u{1F428}', '\u{1F98A}', '\u{1F438}', '\u{1F98B}', '\u{1F43C}', '\u{1F984}', '\u{1F419}', '\u{1F981}', '\u{1F996}'];
@@ -21,12 +21,11 @@ export default function Layout({ children }) {
   const navigate = useNavigate();
   const [profileOpen, setProfileOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  // const [displayName, setDisplayName] = useState('User');
-  const [emoji, setEmoji] = useState('\u{1F427}');
   const profileRef = useRef(null);
   const menuRef = useRef(null);
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 750);
   const name = localStorage.getItem("userName") || "User";
+  const emoji = localStorage.getItem("emoji")|| '\u{1F427}';
 
   // No useEffect needed — menu is closed via onClick on each Link
 
@@ -38,8 +37,8 @@ export default function Layout({ children }) {
         // setDisplayName(user.displayName || 'User');
         const snap = await getDoc(doc(db, "users", user.uid));
         if (snap.exists()) setEmoji(snap.data().emoji || '\u{1F427}');
-      }
-    });
+     }
+   });
     return () => unsubscribe();
   }, []);
 

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
-import { getFirestore, collection, getDocs } from 'firebase/firestore';
+import { getFirestore, collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { fetchAllSessions, addSession, updateSession, deleteSession } from './services/SessionService';
+import { fetchAllTasks } from './services/TaskService';
 import './ScheduleAndTasks.css';
 import React from 'react';
 
@@ -57,23 +58,53 @@ function getNowTimeStr() {
   return `${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}`;
 }
 
+function addHours(time, hours) {
+  const [h, m] = time.split(':').map(Number);
+  const total = h * 60 + m + Math.round(hours * 60);
+  return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
+}
+
+function timeToMin(t) {
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + m;
+}
+
+// Get date string for a specific day of current week
+function getDateForDay(dayName, weekOffset = 0) {
+  const weekStart = getWeekStart(weekOffset);
+  const idx = DAYS.indexOf(dayName);
+  const d = new Date(weekStart);
+  d.setDate(weekStart.getDate() + idx);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+const PRIORITY_ORDER = { high: 0, medium: 1, low: 2 };
+
 export default function StudySchedule() {
-  const [schedule, setSchedule]       = useState([]);
-  const [loading, setLoading]         = useState(true);
-  const [showForm, setShowForm]       = useState(false);
-  const [form, setForm]               = useState(EMPTY_FORM);
-  const [weekOffset, setWeekOffset]   = useState(0);
-  const [now, setNow]                 = useState(getNowTimeStr());
-  const [courses, setCourses]         = useState([]);
-  const [tasks, setTasks]             = useState([]);
+  const [schedule, setSchedule]         = useState([]);
+  const [loading, setLoading]           = useState(true);
+  const [showForm, setShowForm]         = useState(false);
+  const [form, setForm]                 = useState(EMPTY_FORM);
+  const [weekOffset, setWeekOffset]     = useState(0);
+  const [now, setNow]                   = useState(getNowTimeStr());
+  const [courses, setCourses]           = useState([]);
+  const [tasks, setTasks]               = useState([]);
   const [loadingCourses, setLoadingCourses] = useState(false);
   const [loadingTasks, setLoadingTasks]     = useState(false);
-  const [uid, setUid]                 = useState(null);
+  const [uid, setUid]                   = useState(null);
   const [authResolved, setAuthResolved] = useState(false);
 
   // ── Custom confirm modal ──
-  const [confirmOpen, setConfirmOpen]     = useState(false);
+  const [confirmOpen, setConfirmOpen]       = useState(false);
   const [confirmSession, setConfirmSession] = useState(null);
+
+  // ── Generate Study Plan modal ──
+  const [showGenerate, setShowGenerate]         = useState(false);
+  const [availability, setAvailability]         = useState([]);
+  const [selectedDay, setSelectedDay]           = useState('');
+  const [selectedSlot, setSelectedSlot]         = useState('');
+  const [generating, setGenerating]             = useState(false);
+  const [generateMsg, setGenerateMsg]           = useState('');
 
   const db = getFirestore();
 
@@ -134,6 +165,22 @@ export default function StudySchedule() {
       .finally(() => setLoadingTasks(false));
   }, [form.courseId, uid]);
 
+  // Load availability when generate modal opens
+  useEffect(() => {
+    if (!showGenerate || !uid) return;
+    const loadAvailability = async () => {
+      const ref  = doc(db, 'users', uid, 'settings', 'weeklyAvailability');
+      const snap = await getDoc(ref);
+      if (snap.exists()) {
+        setAvailability(snap.data().availability || []);
+      }
+    };
+    loadAvailability();
+  }, [showGenerate, uid]);
+
+  const availableDays = availability.filter(d => d.slots?.some(s => s.available));
+  const selectedDaySlots = availability.find(d => d.day === selectedDay)?.slots?.filter(s => s.available) || [];
+
   const handleCourseChange = (e) => {
     const selectedId = e.target.value;
     const selectedCourse = courses.find(c => c.id === selectedId);
@@ -164,7 +211,6 @@ export default function StudySchedule() {
     setSchedule(prev => prev.map(s => s.id === id ? { ...s, status: newStatus } : s));
   };
 
-  // ── Custom delete confirm ──
   const handleDeleteClick = (session) => {
     setConfirmSession(session);
     setConfirmOpen(true);
@@ -222,6 +268,110 @@ export default function StudySchedule() {
     setTasks([]);
   };
 
+  // ── Generate Study Plan ──
+  const handleGenerate = async () => {
+    if (!selectedDay)  return setGenerateMsg('Please select a day.');
+    if (!selectedSlot) return setGenerateMsg('Please select a time slot.');
+
+    setGenerating(true);
+    setGenerateMsg('');
+
+    try {
+      // 1. Fetch all pending tasks sorted by priority + due date
+      const allTasks = await fetchAllTasks(uid);
+      const pendingTasks = allTasks
+        .filter(t => !t.completed && t.dueDate >= getTodayStr())
+        .sort((a, b) => {
+          const pDiff = (PRIORITY_ORDER[a.priority] ?? 1) - (PRIORITY_ORDER[b.priority] ?? 1);
+          if (pDiff !== 0) return pDiff;
+          return new Date(a.dueDate) - new Date(b.dueDate);
+        });
+
+      if (pendingTasks.length === 0) {
+        setGenerateMsg('No pending tasks found!');
+        setGenerating(false);
+        return;
+      }
+
+      // 2. Parse selected slot
+      const [slotStart, slotEnd] = selectedSlot.split('-');
+      const slotStartMin = timeToMin(slotStart.trim());
+      const slotEndMin   = timeToMin(slotEnd.trim());
+      const slotDuration = slotEndMin - slotStartMin; // total available minutes
+
+      // 3. Get date for selected day this week
+      const sessionDate = getDateForDay(selectedDay, weekOffset);
+
+      // 4. Get existing sessions on that day to avoid conflicts
+      const existingOnDay = schedule.filter(s => s.date === sessionDate);
+
+      // 5. Find free time slots within the chosen slot
+      const busySlots = existingOnDay.map(s => {
+        const [st, en] = s.time.split(' - ');
+        return { start: timeToMin(st), end: timeToMin(en) };
+      }).sort((a, b) => a.start - b.start);
+
+      // 6. Schedule tasks in free windows (1 hour each)
+      let currentTime = slotStartMin;
+      let scheduled = 0;
+      const newSessions = [];
+
+      for (const task of pendingTasks) {
+        if (currentTime + 60 > slotEndMin) break; // no more room
+
+        // Check conflict with existing sessions
+        const endTime = currentTime + 60;
+        const hasConflict = busySlots.some(b =>
+          !(endTime <= b.start || currentTime >= b.end)
+        );
+
+        if (hasConflict) {
+          // Skip to after the conflict
+          const blocking = busySlots.find(b => !(endTime <= b.start || currentTime >= b.end));
+          if (blocking) currentTime = blocking.end;
+          continue;
+        }
+
+        const startStr = `${String(Math.floor(currentTime / 60)).padStart(2,'0')}:${String(currentTime % 60).padStart(2,'0')}`;
+        const endStr   = `${String(Math.floor(endTime / 60)).padStart(2,'0')}:${String(endTime % 60).padStart(2,'0')}`;
+
+        newSessions.push({ task, startStr, endStr });
+        currentTime = endTime;
+        scheduled++;
+      }
+
+      if (newSessions.length === 0) {
+        setGenerateMsg('No free time slots available on this day. Choose a different day or slot.');
+        setGenerating(false);
+        return;
+      }
+
+      // 7. Save sessions to Firestore
+      for (const { task, startStr, endStr } of newSessions) {
+        const newSession = {
+          date: sessionDate,
+          day: selectedDay,
+          weekOffset: getWeekOffset(sessionDate),
+          time: `${startStr} - ${endStr}`,
+          course: task.course || '',
+          task: task.title || '',
+          status: 'pending',
+        };
+        const saved = await addSession(uid, task.courseId, task.id, newSession);
+        setSchedule(prev => [...prev, saved]);
+      }
+
+      setGenerateMsg(`✅ Successfully scheduled ${newSessions.length} session(s) on ${selectedDay}!`);
+      setSelectedDay('');
+      setSelectedSlot('');
+    } catch (err) {
+      console.error('Generate error:', err);
+      setGenerateMsg('Something went wrong. Please try again.');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   const toStr = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   const weekEnd = new Date(weekStart);
   weekEnd.setDate(weekStart.getDate() + 6);
@@ -237,7 +387,18 @@ export default function StudySchedule() {
 
       <div className="schedule-header">
         <h1 className="schedule-title">Study Schedule</h1>
-        <button className="add-session-button" onClick={() => setShowForm(true)}>+ Add Session</button>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button
+            className="add-session-button"
+            onClick={() => setShowGenerate(true)}
+            style={{ background: 'linear-gradient(135deg, #7c3aed, #a855f7)' }}
+          >
+            ✨ Generate Plan
+          </button>
+          <button className="add-session-button" onClick={() => setShowForm(true)}>
+            + Add Session
+          </button>
+        </div>
       </div>
 
       <div className="week-nav">
@@ -248,6 +409,78 @@ export default function StudySchedule() {
         </span>
         <button className="week-nav-btn" onClick={() => setWeekOffset(w => w + 1)}>Next →</button>
       </div>
+
+      {/* ── Generate Study Plan Modal ── */}
+      {showGenerate && (
+        <div className="modal-overlay" onClick={() => { setShowGenerate(false); setGenerateMsg(''); }}>
+          <div className="modal-card" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px' }}>
+            <h2 className="modal-title">✨ Generate Study Plan</h2>
+            <p style={{ color: '#777', fontSize: '13px', marginBottom: '16px', textAlign: 'center' }}>
+              Select a day and time slot. Tasks will be scheduled from highest priority and nearest deadline first, without overlapping your existing sessions.
+            </p>
+
+            <label className="modal-label">Available Day <span className="modal-required">*</span></label>
+            <select
+              className="modal-input"
+              value={selectedDay}
+              onChange={e => { setSelectedDay(e.target.value); setSelectedSlot(''); setGenerateMsg(''); }}
+            >
+              <option value="">— Select a day —</option>
+              {availableDays.map(d => (
+                <option key={d.day} value={d.day}>{d.day}</option>
+              ))}
+            </select>
+
+            {selectedDay && selectedDaySlots.length > 0 && (
+              <>
+                <label className="modal-label">Time Slot <span className="modal-required">*</span></label>
+                <select
+                  className="modal-input"
+                  value={selectedSlot}
+                  onChange={e => { setSelectedSlot(e.target.value); setGenerateMsg(''); }}
+                >
+                  <option value="">— Select a slot —</option>
+                  {selectedDaySlots.map((slot, i) => (
+                    <option key={i} value={`${slot.startTime}-${slot.endTime}`}>
+                      {slot.startTime} – {slot.endTime}
+                    </option>
+                  ))}
+                </select>
+              </>
+            )}
+
+            {selectedDay && selectedDaySlots.length === 0 && (
+              <p style={{ color: '#e67a5f', fontSize: '13px', marginTop: '8px' }}>
+                No available slots for {selectedDay}. Update your Weekly Availability first.
+              </p>
+            )}
+
+            {generateMsg && (
+              <p style={{
+                color: generateMsg.startsWith('✅') ? '#4caf50' : '#e67a5f',
+                fontSize: '13px',
+                marginTop: '8px',
+                fontWeight: '600',
+                textAlign: 'center'
+              }}>
+                {generateMsg}
+              </p>
+            )}
+
+            <div className="modal-actions" style={{ marginTop: '20px' }}>
+              <button className="modal-cancel" onClick={() => { setShowGenerate(false); setGenerateMsg(''); }}>Cancel</button>
+              <button
+                className="modal-save"
+                onClick={handleGenerate}
+                disabled={generating || !selectedDay || !selectedSlot}
+                style={{ background: 'linear-gradient(135deg, #7c3aed, #a855f7)', opacity: generating ? 0.7 : 1 }}
+              >
+                {generating ? '⏳ Generating...' : '✨ Generate'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Add Session Modal ── */}
       {showForm && (
@@ -326,11 +559,7 @@ export default function StudySchedule() {
             </p>
             <div className="modal-actions">
               <button className="modal-cancel" onClick={handleCancelDelete}>Cancel</button>
-              <button
-                className="modal-save"
-                onClick={handleConfirmDelete}
-                style={{ background: 'linear-gradient(135deg, #f44336, #e57373)' }}
-              >
+              <button className="modal-save" onClick={handleConfirmDelete} style={{ background: 'linear-gradient(135deg, #f44336, #e57373)' }}>
                 🗑 Delete
               </button>
             </div>
