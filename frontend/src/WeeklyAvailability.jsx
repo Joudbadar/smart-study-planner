@@ -15,14 +15,9 @@ const defaultAvailability = [
   { day: "Saturday",  slots: [] },
 ];
 
-// ─── helpers ─────────────────────────────────────────────────────────────────
-
-/** Normalise any stored time value to "HH:MM" (24-h) */
 function to24h(val) {
   if (!val) return "";
-  // Already "HH:MM"
   if (/^\d{2}:\d{2}$/.test(val)) return val;
-  // "HH:MM AM/PM"
   const [hm, ap] = val.split(" ");
   if (!ap) return val;
   let [h, m] = hm.split(":").map(Number);
@@ -31,14 +26,12 @@ function to24h(val) {
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 }
 
-/** "HH:MM" → minutes since midnight for comparison */
 function timeToMinutes(val) {
   if (!val) return 0;
   const [h, m] = val.split(":").map(Number);
   return h * 60 + m;
 }
 
-/** Display helper: "HH:MM" → "HH:MM AM/PM" */
 function to12hDisplay(val) {
   if (!val) return "--:--";
   const [h, m] = val.split(":").map(Number);
@@ -47,11 +40,10 @@ function to12hDisplay(val) {
   return `${String(disp).padStart(2, "0")}:${String(m).padStart(2, "0")} ${ap}`;
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
-
 function WeeklyAvailability() {
   const [availability, setAvailability]   = useState(defaultAvailability);
   const [selectedIndex, setSelectedIndex] = useState(null);
+  const [toast, setToast]                 = useState('');
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -136,7 +128,8 @@ function WeeklyAvailability() {
     }
     const ref = doc(db, "users", user.uid, "settings", "weeklyAvailability");
     await setDoc(ref, { availability, updatedAt: new Date().toISOString() });
-    alert("Availability saved successfully!");
+    setToast('✅ Availability saved successfully!');
+    setTimeout(() => setToast(''), 3000);
   };
 
   return (
@@ -149,7 +142,6 @@ function WeeklyAvailability() {
         </button>
       </div>
 
-      {/* Day cards grid */}
       <div className="wa-grid">
         {availability.map((day, index) => (
           <div
@@ -178,8 +170,6 @@ function WeeklyAvailability() {
 
             {(availability[selectedIndex].slots || []).map((slot, slotIndex) => (
               <div className="wa-slot-box" key={slotIndex}>
-
-                {/* Available / Unavailable toggle */}
                 <div className="wa-check-group">
                   <label className={`wa-check ${slot.available ? "wa-active-check" : ""}`}>
                     <input type="checkbox" checked={slot.available} onChange={() => updateSlot(slotIndex, "available", true)} />
@@ -191,26 +181,14 @@ function WeeklyAvailability() {
                   </label>
                 </div>
 
-                {/* Time inputs — same as StudySchedule */}
                 <div className="modal-row">
                   <div className="modal-col">
                     <label className="modal-label">Start Time <span className="modal-required">*</span></label>
-                    <input
-                      className="modal-input"
-                      type="time"
-                      value={slot.startTime}
-                      onChange={(e) => updateSlot(slotIndex, "startTime", e.target.value)}
-                    />
+                    <input className="modal-input" type="time" value={slot.startTime} onChange={(e) => updateSlot(slotIndex, "startTime", e.target.value)} />
                   </div>
                   <div className="modal-col">
                     <label className="modal-label">End Time <span className="modal-required">*</span></label>
-                    <input
-                      className="modal-input"
-                      type="time"
-                      value={slot.endTime}
-                      min={slot.startTime || undefined}
-                      onChange={(e) => updateSlot(slotIndex, "endTime", e.target.value)}
-                    />
+                    <input className="modal-input" type="time" value={slot.endTime} min={slot.startTime || undefined} onChange={(e) => updateSlot(slotIndex, "endTime", e.target.value)} />
                   </div>
                 </div>
 
@@ -220,15 +198,34 @@ function WeeklyAvailability() {
               </div>
             ))}
 
-            <button className="wa-add-slot-btn" onClick={addSlot}>
-              + Add Time Slot
-            </button>
+            <button className="wa-add-slot-btn" onClick={addSlot}>+ Add Time Slot</button>
 
             <div className="modal-actions">
               <button className="modal-cancel" onClick={() => setSelectedIndex(null)}>Cancel</button>
               <button className="modal-save"   onClick={closeModalWithValidation}>Done</button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Toast notification */}
+      {toast && (
+        <div style={{
+          position: 'fixed',
+          bottom: '24px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: '#2d2d2d',
+          color: 'white',
+          padding: '12px 24px',
+          borderRadius: '12px',
+          fontSize: '14px',
+          fontWeight: '600',
+          zIndex: 9999,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
+          animation: 'fadeSlideIn 0.3s ease',
+        }}>
+          {toast}
         </div>
       )}
 

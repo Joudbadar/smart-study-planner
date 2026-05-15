@@ -10,6 +10,7 @@ const ALLOWED_DOMAINS = [
 ];
 
 const isValidEmail = (email) => {
+  if (!email.includes('@')) return false;
   const domain = email.split('@')[1];
   return ALLOWED_DOMAINS.includes(domain?.toLowerCase());
 };
@@ -25,8 +26,21 @@ export default function SignIn() {
     e.preventDefault();
     setError('');
 
+    // Test Case 1: Email missing @ symbol
+    if (!email.includes('@')) {
+      setError('Please enter a valid email address including "@".');
+      return;
+    }
+
+    // Test Case 2: Domain not allowed
     if (!isValidEmail(email)) {
-      setError('Invalid email format');
+      setError('Please use a valid email provider .');
+      return;
+    }
+
+    // Test Case 3: Password empty
+    if (!password) {
+      setError('Please enter your password.');
       return;
     }
 
@@ -36,7 +50,17 @@ export default function SignIn() {
       await signIn({ email, password });
       navigate('/dashboard');
     } catch (err) {
-      setError(getAuthErrorMessage(err.code));
+      // Test Case 4: Email not registered
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
+        setError('No account found with this email. Please sign up first.');
+      }
+      // Test Case 5: Wrong password
+      else if (err.code === 'auth/wrong-password') {
+        setError('Incorrect password. Please try again.');
+      }
+      else {
+        setError(getAuthErrorMessage(err.code));
+      }
     } finally {
       setLoading(false);
     }

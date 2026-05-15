@@ -38,11 +38,10 @@ function getDayName(dateStr) {
   return DAYS[d.getDay()];
 }
 
-// Returns how many weeks dateStr is from the current week (0 = this week, 1 = next, -1 = last)
 function getWeekOffset(dateStr) {
   const d = new Date(dateStr + 'T00:00:00');
   d.setHours(0, 0, 0, 0);
-  const sunday = getWeekStart(0); // this week's Sunday at midnight
+  const sunday = getWeekStart(0);
   const diffDays = Math.round((d - sunday) / (1000 * 60 * 60 * 24));
   return Math.floor(diffDays / 7);
 }
@@ -52,35 +51,35 @@ function getTodayStr() {
   return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
 }
 
-// Returns current time as "HH:MM" in 24h format
 function getNowTimeStr() {
   const t = new Date();
   return `${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}`;
 }
 
 export default function StudySchedule() {
-  const [schedule, setSchedule] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState(EMPTY_FORM);
-  const [weekOffset, setWeekOffset] = useState(0);
-  const [now, setNow] = useState(getNowTimeStr());
+  const [schedule, setSchedule]       = useState([]);
+  const [loading, setLoading]         = useState(true);
+  const [showForm, setShowForm]       = useState(false);
+  const [form, setForm]               = useState(EMPTY_FORM);
+  const [weekOffset, setWeekOffset]   = useState(0);
+  const [now, setNow]                 = useState(getNowTimeStr());
+  const [courses, setCourses]         = useState([]);
+  const [tasks, setTasks]             = useState([]);
+  const [loadingCourses, setLoadingCourses] = useState(false);
+  const [loadingTasks, setLoadingTasks]     = useState(false);
+  const [uid, setUid]                 = useState(null);
+  const [authResolved, setAuthResolved] = useState(false);
 
-  // Update current time every minute for real-time validation
+  // ── Custom confirm modal ──
+  const [confirmOpen, setConfirmOpen]     = useState(false);
+  const [confirmSession, setConfirmSession] = useState(null);
+
+  const db = getFirestore();
+
   useEffect(() => {
     const interval = setInterval(() => setNow(getNowTimeStr()), 60000);
     return () => clearInterval(interval);
   }, []);
-
-  // Dropdown data
-  const [courses, setCourses] = useState([]);
-  const [tasks, setTasks] = useState([]);
-  const [loadingCourses, setLoadingCourses] = useState(false);
-  const [loadingTasks, setLoadingTasks] = useState(false);
-
-  const [uid, setUid] = useState(null);
-  const [authResolved, setAuthResolved] = useState(false);
-  const db = getFirestore();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(getAuth(), (user) => {
@@ -94,10 +93,8 @@ export default function StudySchedule() {
   const weekStart = getWeekStart(weekOffset);
   const weekDates = getWeekDates(weekStart);
 
-  // Fetch all sessions — runs once auth is resolved
   useEffect(() => {
-    if (!authResolved) return;
-    if (!uid) return;
+    if (!authResolved || !uid) return;
     let cancelled = false;
     fetchAllSessions(uid).then(data => {
       if (!cancelled) { setSchedule(data); setLoading(false); }
@@ -108,7 +105,6 @@ export default function StudySchedule() {
     return () => { cancelled = true; };
   }, [uid, authResolved]);
 
-  // Fetch courses when modal opens
   useEffect(() => {
     if (!showForm || !uid) return;
     const loadCourses = async () => {
@@ -125,7 +121,6 @@ export default function StudySchedule() {
     loadCourses();
   }, [showForm, uid]);
 
-  // Fetch tasks (non-completed only) when a course is selected
   useEffect(() => {
     if (!form.courseId || !uid) { setTasks([]); return; }
     setLoadingTasks(true);
@@ -168,10 +163,22 @@ export default function StudySchedule() {
     setSchedule(prev => prev.map(s => s.id === id ? { ...s, status: newStatus } : s));
   };
 
-  const handleDelete = async (id, courseId, taskId) => {
-    if (!window.confirm('Delete this session?')) return;
-    await deleteSession(uid, courseId, taskId, id);
-    setSchedule(prev => prev.filter(s => s.id !== id));
+  // ── Custom delete confirm ──
+  const handleDeleteClick = (session) => {
+    setConfirmSession(session);
+    setConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    setConfirmOpen(false);
+    await deleteSession(uid, confirmSession.courseId, confirmSession.taskId, confirmSession.id);
+    setSchedule(prev => prev.filter(s => s.id !== confirmSession.id));
+    setConfirmSession(null);
+  };
+
+  const handleCancelDelete = () => {
+    setConfirmOpen(false);
+    setConfirmSession(null);
   };
 
   const handleAdd = async () => {
@@ -184,12 +191,9 @@ export default function StudySchedule() {
 
     const today = getTodayStr();
     if (form.date < today) return alert('Session date must be today or in the future.');
-
-    // If session is today, start time must be from now onwards
     if (form.date === today && form.startTime < getNowTimeStr()) {
       return alert(`Start time must be from now (${getNowTimeStr()}) onwards for today's sessions.`);
     }
-
     if (form.taskDueDate && form.date > form.taskDueDate) {
       return alert(`Session date can't be after the task due date (${form.taskDueDate}).`);
     }
@@ -217,19 +221,13 @@ export default function StudySchedule() {
     setTasks([]);
   };
 
-  // Filter by actual date range so stored weekOffset values never cause mismatches
+  const toStr = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   const weekEnd = new Date(weekStart);
   weekEnd.setDate(weekStart.getDate() + 6);
-  const toStr = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   const weekStartStr = toStr(weekStart);
   const weekEndStr   = toStr(weekEnd);
 
-  console.log('[Schedule] week range:', weekStartStr, '→', weekEndStr);
-  console.log('[Schedule] all session dates:', schedule.map(s => s.date));
-
-  const weekSessions = schedule.filter(s =>
-    s.date >= weekStartStr && s.date <= weekEndStr
-  );
+  const weekSessions = schedule.filter(s => s.date >= weekStartStr && s.date <= weekEndStr);
 
   if (loading) return <p>Loading schedule...</p>;
 
@@ -238,9 +236,7 @@ export default function StudySchedule() {
 
       <div className="schedule-header">
         <h1 className="schedule-title">Study Schedule</h1>
-        <button className="add-session-button" onClick={() => setShowForm(true)}>
-          + Add Session
-        </button>
+        <button className="add-session-button" onClick={() => setShowForm(true)}>+ Add Session</button>
       </div>
 
       <div className="week-nav">
@@ -252,22 +248,15 @@ export default function StudySchedule() {
         <button className="week-nav-btn" onClick={() => setWeekOffset(w => w + 1)}>Next →</button>
       </div>
 
+      {/* ── Add Session Modal ── */}
       {showForm && (
         <div className="modal-overlay">
           <div className="modal-card">
             <h2 className="modal-title">Add Session</h2>
 
-            {/* Course Dropdown */}
             <label className="modal-label">Course <span className="modal-required">*</span></label>
-            <select
-              className="modal-input"
-              value={form.courseId}
-              onChange={handleCourseChange}
-              disabled={loadingCourses}
-            >
-              <option value="">
-                {loadingCourses ? 'Loading courses...' : '— Select a course —'}
-              </option>
+            <select className="modal-input" value={form.courseId} onChange={handleCourseChange} disabled={loadingCourses}>
+              <option value="">{loadingCourses ? 'Loading courses...' : '— Select a course —'}</option>
               {courses.map(c => (
                 <option key={c.id} value={c.id}>
                   {c.code && c.name ? `${c.code} – ${c.name}` : c.code || c.name || c.id}
@@ -275,31 +264,16 @@ export default function StudySchedule() {
               ))}
             </select>
 
-            {/* Task Dropdown */}
             <label className="modal-label">Task <span className="modal-required">*</span></label>
-            <select
-              className="modal-input"
-              value={form.taskId}
-              onChange={handleTaskChange}
-              disabled={!form.courseId || loadingTasks}
-            >
+            <select className="modal-input" value={form.taskId} onChange={handleTaskChange} disabled={!form.courseId || loadingTasks}>
               <option value="">
-                {!form.courseId
-                  ? 'Select a course first'
-                  : loadingTasks
-                  ? 'Loading tasks...'
-                  : tasks.length === 0
-                  ? 'No tasks found for this course'
-                  : '— Select a task —'}
+                {!form.courseId ? 'Select a course first' : loadingTasks ? 'Loading tasks...' : tasks.length === 0 ? 'No tasks found for this course' : '— Select a task —'}
               </option>
               {tasks.map(t => (
-                <option key={t.id} value={t.id}>
-                  {t.title ?? t.name ?? t.id}
-                </option>
+                <option key={t.id} value={t.id}>{t.title ?? t.name ?? t.id}</option>
               ))}
             </select>
 
-            {/* Date */}
             <label className="modal-label">Date <span className="modal-required">*</span></label>
             <input
               className="modal-input"
@@ -316,29 +290,14 @@ export default function StudySchedule() {
               </small>
             )}
 
-            {/* Time */}
             <div className="modal-row">
               <div className="modal-col">
                 <label className="modal-label">Start Time <span className="modal-required">*</span></label>
-                <input
-                  className="modal-input"
-                  type="time"
-                  value={form.startTime}
-                  min={form.date === getTodayStr() ? now : undefined}
-                  disabled={!form.date}
-                  onChange={e => setForm(prev => ({ ...prev, startTime: e.target.value }))}
-                />
+                <input className="modal-input" type="time" value={form.startTime} min={form.date === getTodayStr() ? now : undefined} disabled={!form.date} onChange={e => setForm(prev => ({ ...prev, startTime: e.target.value }))} />
               </div>
               <div className="modal-col">
                 <label className="modal-label">End Time <span className="modal-required">*</span></label>
-                <input
-                  className="modal-input"
-                  type="time"
-                  value={form.endTime}
-                  min={form.startTime || undefined}
-                  disabled={!form.date}
-                  onChange={e => setForm(prev => ({ ...prev, endTime: e.target.value }))}
-                />
+                <input className="modal-input" type="time" value={form.endTime} min={form.startTime || undefined} disabled={!form.date} onChange={e => setForm(prev => ({ ...prev, endTime: e.target.value }))} />
               </div>
             </div>
             {form.date === getTodayStr() && (
@@ -350,6 +309,29 @@ export default function StudySchedule() {
             <div className="modal-actions">
               <button className="modal-cancel" onClick={handleCloseForm}>Cancel</button>
               <button className="modal-save" onClick={handleAdd}>✓ Add Session</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Custom Delete Confirm Modal ── */}
+      {confirmOpen && (
+        <div className="modal-overlay" onClick={handleCancelDelete}>
+          <div className="modal-card" onClick={e => e.stopPropagation()} style={{ maxWidth: '380px', textAlign: 'center' }}>
+            <div style={{ fontSize: '48px', marginBottom: '12px' }}>🗑</div>
+            <h2 className="modal-title">Delete Session?</h2>
+            <p style={{ color: '#777', fontSize: '14px', margin: '8px 0 24px' }}>
+              This will permanently delete this study session. This action cannot be undone.
+            </p>
+            <div className="modal-actions">
+              <button className="modal-cancel" onClick={handleCancelDelete}>Cancel</button>
+              <button
+                className="modal-save"
+                onClick={handleConfirmDelete}
+                style={{ background: 'linear-gradient(135deg, #f44336, #e57373)' }}
+              >
+                🗑 Delete
+              </button>
             </div>
           </div>
         </div>
@@ -379,22 +361,13 @@ export default function StudySchedule() {
             </div>
             <div className="day-sessions-list">
               {weekSessions.filter(s => s.day === day).map(session => (
-                <div
-                  key={session.id}
-                  className={`study-session-item ${session.status === 'completed' ? 'session-completed' : ''}`}
-                >
+                <div key={session.id} className={`study-session-item ${session.status === 'completed' ? 'session-completed' : ''}`}>
                   <div className="session-time">{session.time}</div>
                   <div className="session-course">{session.course}</div>
                   <div className="session-task">{session.task}</div>
                   <div className="session-actions">
-                    <button
-                      className="complete-session-button"
-                      onClick={() => handleComplete(session.id, session.courseId, session.taskId, session.status)}
-                    >✓</button>
-                    <button
-                      className="delete-session-button"
-                      onClick={() => handleDelete(session.id, session.courseId, session.taskId)}
-                    >🗑</button>
+                    <button className="complete-session-button" onClick={() => handleComplete(session.id, session.courseId, session.taskId, session.status)}>✓</button>
+                    <button className="delete-session-button" onClick={() => handleDeleteClick(session)}>🗑</button>
                   </div>
                 </div>
               ))}

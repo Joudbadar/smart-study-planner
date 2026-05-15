@@ -15,32 +15,25 @@ function formatDate(dateStr) {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-const EMPTY_FORM = {
-  title: '',
-  courseId: '',
-  course: '',
-  dueDate: '',
-  priority: 'medium',
-};
+const EMPTY_FORM = { title: '', courseId: '', course: '', dueDate: '', priority: 'medium' };
 
 export default function TasksDeadlines() {
-  const [deadlines, setDeadlines] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('All');
-
-  // Add modal
-  const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState(EMPTY_FORM);
-
-  // Edit modal
+  const [deadlines, setDeadlines]       = useState([]);
+  const [loading, setLoading]           = useState(true);
+  const [filter, setFilter]             = useState('All');
+  const [showForm, setShowForm]         = useState(false);
+  const [form, setForm]                 = useState(EMPTY_FORM);
   const [showEditForm, setShowEditForm] = useState(false);
-  const [editingTask, setEditingTask] = useState(null);
-  const [editForm, setEditForm] = useState(EMPTY_FORM);
-
-  const [courses, setCourses] = useState([]);
+  const [editingTask, setEditingTask]   = useState(null);
+  const [editForm, setEditForm]         = useState(EMPTY_FORM);
+  const [courses, setCourses]           = useState([]);
   const [loadingCourses, setLoadingCourses] = useState(false);
+  const [uid, setUid]                   = useState(null);
 
-  const [uid, setUid] = useState(null);
+  // ── Custom confirm modal ──
+  const [confirmOpen, setConfirmOpen]   = useState(false);
+  const [confirmTask, setConfirmTask]   = useState(null);
+
   const db = getFirestore();
 
   useEffect(() => {
@@ -97,10 +90,22 @@ export default function TasksDeadlines() {
     setDeadlines(prev => prev.map(t => t.id === id ? { ...t, completed: !currentStatus } : t));
   };
 
-  const handleDelete = async (id, courseId) => {
-    if (!window.confirm('Delete this task?')) return;
-    await deleteTask(uid, courseId, id);
-    setDeadlines(prev => prev.filter(t => t.id !== id));
+  // ── Custom delete confirm ──
+  const handleDeleteClick = (task) => {
+    setConfirmTask(task);
+    setConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    setConfirmOpen(false);
+    await deleteTask(uid, confirmTask.courseId, confirmTask.id);
+    setDeadlines(prev => prev.filter(t => t.id !== confirmTask.id));
+    setConfirmTask(null);
+  };
+
+  const handleCancelDelete = () => {
+    setConfirmOpen(false);
+    setConfirmTask(null);
   };
 
   const openEdit = (task) => {
@@ -138,9 +143,7 @@ export default function TasksDeadlines() {
       }
     }
 
-    setDeadlines(prev =>
-      prev.map(t => t.id === editingTask.id ? { ...t, ...updatedData } : t)
-    );
+    setDeadlines(prev => prev.map(t => t.id === editingTask.id ? { ...t, ...updatedData } : t));
     setShowEditForm(false);
     setEditingTask(null);
   };
@@ -180,9 +183,7 @@ export default function TasksDeadlines() {
 
       <div className="tasks-header">
         <h1 className="tasks-title">Tasks & Deadlines</h1>
-        <button className="add-task-button" onClick={() => setShowForm(true)}>
-          + Add Task
-        </button>
+        <button className="add-task-button" onClick={() => setShowForm(true)}>+ Add Task</button>
       </div>
 
       {/* ── Add Modal ── */}
@@ -192,43 +193,19 @@ export default function TasksDeadlines() {
             <h2 className="modal-title">New Task</h2>
 
             <label className="modal-label">Course <span className="modal-required">*</span></label>
-            <select
-              className="modal-input"
-              value={form.courseId}
-              onChange={handleCourseChange}
-              disabled={loadingCourses}
-            >
-              <option value="">
-                {loadingCourses ? 'Loading courses...' : '— Select a course —'}
-              </option>
-              {courses.map(c => (
-                <option key={c.id} value={c.id}>{courseLabel(c)}</option>
-              ))}
+            <select className="modal-input" value={form.courseId} onChange={handleCourseChange} disabled={loadingCourses}>
+              <option value="">{loadingCourses ? 'Loading courses...' : '— Select a course —'}</option>
+              {courses.map(c => <option key={c.id} value={c.id}>{courseLabel(c)}</option>)}
             </select>
 
             <label className="modal-label">Task Title <span className="modal-required">*</span></label>
-            <input
-              className="modal-input"
-              placeholder="e.g. Demo Submission"
-              value={form.title}
-              onChange={e => setForm(prev => ({ ...prev, title: e.target.value }))}
-            />
+            <input className="modal-input" placeholder="e.g. Demo Submission" value={form.title} onChange={e => setForm(prev => ({ ...prev, title: e.target.value }))} />
 
             <label className="modal-label">Due Date <span className="modal-required">*</span></label>
-            <input
-              className="modal-input"
-              type="date"
-              value={form.dueDate}
-              min={getTodayStr()}
-              onChange={e => setForm(prev => ({ ...prev, dueDate: e.target.value }))}
-            />
+            <input className="modal-input" type="date" value={form.dueDate} min={getTodayStr()} onChange={e => setForm(prev => ({ ...prev, dueDate: e.target.value }))} />
 
             <label className="modal-label">Priority</label>
-            <select
-              className="modal-input"
-              value={form.priority}
-              onChange={e => setForm({ ...form, priority: e.target.value })}
-            >
+            <select className="modal-input" value={form.priority} onChange={e => setForm({ ...form, priority: e.target.value })}>
               <option value="high">High</option>
               <option value="medium">Medium</option>
               <option value="low">Low</option>
@@ -249,43 +226,19 @@ export default function TasksDeadlines() {
             <h2 className="modal-title">Edit Task</h2>
 
             <label className="modal-label">Course <span className="modal-required">*</span></label>
-            <select
-              className="modal-input"
-              value={editForm.courseId}
-              onChange={handleEditCourseChange}
-              disabled={loadingCourses}
-            >
-              <option value="">
-                {loadingCourses ? 'Loading courses...' : '— Select a course —'}
-              </option>
-              {courses.map(c => (
-                <option key={c.id} value={c.id}>{courseLabel(c)}</option>
-              ))}
+            <select className="modal-input" value={editForm.courseId} onChange={handleEditCourseChange} disabled={loadingCourses}>
+              <option value="">{loadingCourses ? 'Loading courses...' : '— Select a course —'}</option>
+              {courses.map(c => <option key={c.id} value={c.id}>{courseLabel(c)}</option>)}
             </select>
 
             <label className="modal-label">Task Title <span className="modal-required">*</span></label>
-            <input
-              className="modal-input"
-              placeholder="e.g. Demo Submission"
-              value={editForm.title}
-              onChange={e => setEditForm(prev => ({ ...prev, title: e.target.value }))}
-            />
+            <input className="modal-input" placeholder="e.g. Demo Submission" value={editForm.title} onChange={e => setEditForm(prev => ({ ...prev, title: e.target.value }))} />
 
             <label className="modal-label">Due Date <span className="modal-required">*</span></label>
-            <input
-              className="modal-input"
-              type="date"
-              value={editForm.dueDate}
-              min={getTodayStr()}
-              onChange={e => setEditForm(prev => ({ ...prev, dueDate: e.target.value }))}
-            />
+            <input className="modal-input" type="date" value={editForm.dueDate} min={getTodayStr()} onChange={e => setEditForm(prev => ({ ...prev, dueDate: e.target.value }))} />
 
             <label className="modal-label">Priority</label>
-            <select
-              className="modal-input"
-              value={editForm.priority}
-              onChange={e => setEditForm({ ...editForm, priority: e.target.value })}
-            >
+            <select className="modal-input" value={editForm.priority} onChange={e => setEditForm({ ...editForm, priority: e.target.value })}>
               <option value="high">High</option>
               <option value="medium">Medium</option>
               <option value="low">Low</option>
@@ -294,6 +247,29 @@ export default function TasksDeadlines() {
             <div className="modal-actions">
               <button className="modal-cancel" onClick={() => { setShowEditForm(false); setEditingTask(null); }}>Cancel</button>
               <button className="modal-save" onClick={handleEditSave}>Save Changes</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Custom Delete Confirm Modal ── */}
+      {confirmOpen && (
+        <div className="modal-overlay" onClick={handleCancelDelete}>
+          <div className="modal-card" onClick={e => e.stopPropagation()} style={{ maxWidth: '380px', textAlign: 'center' }}>
+            <div style={{ fontSize: '48px', marginBottom: '12px' }}>🗑</div>
+            <h2 className="modal-title">Delete Task?</h2>
+            <p style={{ color: '#777', fontSize: '14px', margin: '8px 0 24px' }}>
+              This will permanently delete <strong>"{confirmTask?.title}"</strong> and all its sessions. This action cannot be undone.
+            </p>
+            <div className="modal-actions">
+              <button className="modal-cancel" onClick={handleCancelDelete}>Cancel</button>
+              <button
+                className="modal-save"
+                onClick={handleConfirmDelete}
+                style={{ background: 'linear-gradient(135deg, #f44336, #e57373)' }}
+              >
+                🗑 Delete
+              </button>
             </div>
           </div>
         </div>
@@ -333,24 +309,19 @@ export default function TasksDeadlines() {
           </p>
         )}
         {filtered.map(item => (
-          <div
-            key={item.id}
-            className={`deadline-task-card ${item.priority} ${item.completed ? 'task-completed' : ''}`}
-          >
+          <div key={item.id} className={`deadline-task-card ${item.priority} ${item.completed ? 'task-completed' : ''}`}>
             <div className={`priority-badge ${item.completed ? 'completed' : item.priority}`}>
               {item.completed ? 'done' : item.priority}
             </div>
-
             <div className="task-info-section">
               <div className="task-title">{item.title}</div>
               <div className="task-course-name">{item.course}</div>
               <div className="task-due-date">📅 Due: {formatDate(item.dueDate)}</div>
             </div>
-
             <div className="task-action-buttons">
               <button className="complete-task-button" onClick={() => handleComplete(item.id, item.courseId, item.completed)}>✓</button>
               <button className="edit-task-button" onClick={() => openEdit(item)}>✎</button>
-              <button className="delete-task-button" onClick={() => handleDelete(item.id, item.courseId)}>🗑</button>
+              <button className="delete-task-button" onClick={() => handleDeleteClick(item)}>🗑</button>
             </div>
           </div>
         ))}
