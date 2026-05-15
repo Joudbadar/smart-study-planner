@@ -4,6 +4,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "./services/firebase";
 import "./ScheduleAndTasks.css";
 import "./WeeklyAvailability.css";
+import React from 'react';
 
 const defaultAvailability = [
   { day: "Sunday",    slots: [{ startTime: "10:00", endTime: "18:00", available: true }] },
@@ -65,12 +66,15 @@ function WeeklyAvailability() {
     return () => unsubscribe();
   }, []);
 
-  const hasAvailableSlot = (day) => day.slots?.some((s) => s.available) || false;
+  const hasAvailableSlot = (day) => (day.slots?.length || 0) > 0;
+
+  console.log("availability",availability);
+  
 
   const formatSlots = (day) => {
     if (!day.slots?.length) return "No time slots selected";
     return day.slots
-      .map((s) => `${to12hDisplay(s.startTime)} – ${to12hDisplay(s.endTime)} ${s.available ? "(Available)" : "(Unavailable)"}`)
+      .map((s) => `${to12hDisplay(s.startTime)} – ${to12hDisplay(s.endTime)}${timeToMinutes(s.endTime) <= timeToMinutes(s.startTime) ? " (next day)" : ""}`)
       .join("  |  ");
   };
 
@@ -80,8 +84,8 @@ function WeeklyAvailability() {
         alert(`Please fill both start and end time in ${day.day}.`);
         return false;
       }
-      if (timeToMinutes(slot.startTime) >= timeToMinutes(slot.endTime)) {
-        alert(`End time must be after start time in ${day.day}.`);
+      if (slot.startTime === slot.endTime) {
+        alert(`Start and end time cannot be the same in ${day.day}.`);
         return false;
       }
     }
@@ -170,17 +174,6 @@ function WeeklyAvailability() {
 
             {(availability[selectedIndex].slots || []).map((slot, slotIndex) => (
               <div className="wa-slot-box" key={slotIndex}>
-                <div className="wa-check-group">
-                  <label className={`wa-check ${slot.available ? "wa-active-check" : ""}`}>
-                    <input type="checkbox" checked={slot.available} onChange={() => updateSlot(slotIndex, "available", true)} />
-                    Available
-                  </label>
-                  <label className={`wa-check ${!slot.available ? "wa-active-uncheck" : ""}`}>
-                    <input type="checkbox" checked={!slot.available} onChange={() => updateSlot(slotIndex, "available", false)} />
-                    Unavailable
-                  </label>
-                </div>
-
                 <div className="modal-row">
                   <div className="modal-col">
                     <label className="modal-label">Start Time <span className="modal-required">*</span></label>
@@ -188,7 +181,7 @@ function WeeklyAvailability() {
                   </div>
                   <div className="modal-col">
                     <label className="modal-label">End Time <span className="modal-required">*</span></label>
-                    <input className="modal-input" type="time" value={slot.endTime} min={slot.startTime || undefined} onChange={(e) => updateSlot(slotIndex, "endTime", e.target.value)} />
+                    <input className="modal-input" type="time" value={slot.endTime} onChange={(e) => updateSlot(slotIndex, "endTime", e.target.value)} />
                   </div>
                 </div>
 

@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { getAuth } from "firebase/auth";
 import "./CourseManagement.css";
 import { fetchCourses, addCourse, updateCourse, deleteCourse, propagateCourseEdit } from "./services/CourseService";
+import React from 'react';
 
 const emptyForm = { name: "", code: "", instructor: "", creditHours: "", hoursPerWeek: "", semester: "", difficulty: "" };
 
@@ -149,7 +150,7 @@ export default function CourseManagement() {
   };
 
   return (
-    <div className="cm-root">
+    <div className="w-full  ">
       <div className="cm-bg-texture" />
 
       <header className="cm-header">

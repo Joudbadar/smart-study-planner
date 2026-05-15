@@ -34,6 +34,8 @@ export async function signUp({ fullName, email, password }) {
 export async function signIn({ email, password }) {
   const userCredential = await signInWithEmailAndPassword(auth, email, password);
   const user = userCredential.user;
+  console.log("dataUser : ", user );
+  localStorage.setItem("userName", user.displayName);
 
   if (!user.emailVerified) {
     await signOut(auth);

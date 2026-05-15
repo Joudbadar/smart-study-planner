@@ -48,7 +48,9 @@ export default function SignIn() {
 
     try {
       await signIn({ email, password });
-      navigate('/dashboard');
+           navigate('/dashboard');
+
+     
     } catch (err) {
       // Test Case 4: Email not registered
       if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {

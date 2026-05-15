@@ -3,6 +3,7 @@ import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, collection, getDocs } from 'firebase/firestore';
 import { fetchAllSessions, addSession, updateSession, deleteSession } from './services/SessionService';
 import './ScheduleAndTasks.css';
+import React from 'react';
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const EMPTY_FORM = { date: '', startTime: '', endTime: '', courseId: '', course: '', taskId: '', task: '', taskDueDate: '' };

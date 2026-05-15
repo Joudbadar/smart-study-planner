@@ -6,6 +6,8 @@ import { fetchAllTasks } from './services/TaskService';
 import { fetchCourses } from './services/CourseService';
 import './Dashboard.css';
 import Chatbot from './Chatbot';
+import React from 'react';
+
 
 export default function Dashboard() {
   const [todaySessions, setTodaySessions] = useState([]);
@@ -22,17 +24,7 @@ export default function Dashboard() {
   const DAY_LABELS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   const today      = DAYS[new Date().getDay()];
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setUid(user.uid);
-        loadData(user.uid);
-      } else {
-        setLoading(false);
-      }
-    });
-    return () => unsubscribe();
-  }, []);
+ 
 
   const loadData = async (userId) => {
     // 1. Sessions — using fetchAllSessions from SessionService
@@ -56,6 +48,17 @@ export default function Dashboard() {
 
     setLoading(false);
   };
+   useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setUid(user.uid);
+        loadData(user.uid);
+      } else {
+        setLoading(false);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   const handleComplete = async (session) => {
     await updateSession(uid, session.courseId, session.taskId, session.id, { status: 'completed' });
@@ -130,11 +133,11 @@ export default function Dashboard() {
   if (loading) return <p style={{ padding: '2rem' }}>Loading dashboard...</p>;
 
   return (
-    <>
+    <div  className='h-full'>
       <button className="chatbot-fab" title="AI Assistant" onClick={() => setChatbotOpen(true)}>💬</button>
       {chatbotOpen && <Chatbot onClose={() => setChatbotOpen(false)} />}
 
-      <h1 className="page-title">Welcome! 👋</h1>
+      <h1 className="page-title " >Welcome! 👋</h1>
       <p className="page-subtitle">Here is your study summary for today</p>
 
       <div className="stats-grid">
@@ -224,6 +227,6 @@ export default function Dashboard() {
           )}
         </div>
       </div>
-    </>
+    </div>
   );
 }

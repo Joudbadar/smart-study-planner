@@ -1,38 +1,77 @@
 import { useEffect, useState } from "react";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, onSnapshot } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "./services/firebase";
 import { fetchAllTasks } from "./services/TaskService";
 import { fetchCourses } from "./services/CourseService";
 import "./StudyPlan.css";
+import React from 'react';
 
 const WEEK_DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 function StudyPlan() {
   const [availability, setAvailability] = useState([]);
-  const [tasks, setTasks]               = useState([]);
-  const [courses, setCourses]           = useState([]);
-  const [studyPlan, setStudyPlan]       = useState([]);
-  const [loading, setLoading]           = useState(true);
-  const [uid, setUid]                   = useState(null);
-  const [generating, setGenerating]     = useState(false);
+  const [tasks, setTasks] = useState([]);
+  const [courses, setCourses] = useState([]);
+  const [studyPlan, setStudyPlan] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [uid, setUid] = useState(null);
+  const [generating, setGenerating] = useState(false);
 
   // ── Load data on auth ──
   useEffect(() => {
+    let unsubAvail = null;
+    let isFirst = true;
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) { setLoading(false); return; }
       setUid(user.uid);
 
-      // 1. Load availability
-      const availRef  = doc(db, "users", user.uid, "settings", "weeklyAvailability");
-      const availSnap = await getDoc(availRef);
-      if (availSnap.exists()) {
-        const data = availSnap.data().availability || [];
-        setAvailability(data.map(day => ({
-          day: day.day,
-          slots: day.slots || [],
-        })));
-      }
+      // 1. Load availability with real-time listener
+      const availRef = doc(db, "users", user.uid, "settings", "weeklyAvailability");
+      if (unsubAvail) { unsubAvail(); }
+      isFirst = true;
+      unsubAvail = onSnapshot(availRef, async (snap) => {
+        if (!snap.exists()) return;
+        const raw = snap.data().availability || [];
+        const newAvail = raw.map(d => ({ day: d.day, slots: d.slots || [] }));
+        setAvailability(newAvail);
+
+        if (isFirst) { isFirst = false; return; }
+
+        // Availability changed: fetch fresh data and regenerate
+        const freshTasks = await fetchAllTasks(user.uid);
+        setTasks(freshTasks);
+        const pending = freshTasks.filter(t => !t.completed);
+        const availDays = newAvail.filter(d => d.slots && d.slots.some(s => s.available));
+        if (pending.length === 0 || availDays.length === 0) return;
+
+        const addH = (time, hours) => {
+          const [h, m] = time.split(":").map(Number);
+          const total = h * 60 + m + Math.round(Number(hours) * 60);
+          return String(Math.floor(total / 60)).padStart(2, "0") + ":" + String(total % 60).padStart(2, "0");
+        };
+        const sorted = [...pending].sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+        const generated = [];
+        let dayIdx = 0;
+        for (const task of sorted) {
+          let assigned = false, attempts = 0;
+          while (!assigned && attempts < availDays.length) {
+            const day = availDays[dayIdx % availDays.length];
+            const slot = day.slots.find(s => s.available);
+            if (slot && !generated.find(p => p.day === day.day && p.startTime === slot.startTime)) {
+              const endTime = addH(slot.startTime, 1);
+              if (endTime <= slot.endTime) {
+                generated.push({ id: Date.now() + Math.random(), day: day.day, startTime: slot.startTime, endTime, task: task.title, course: task.course, dueDate: task.dueDate, priority: task.priority || "medium" });
+                assigned = true;
+              }
+            }
+            dayIdx++; attempts++;
+          }
+        }
+        const planRef2 = doc(db, "users", user.uid, "settings", "studyPlan");
+        await setDoc(planRef2, { plan: generated, generatedAt: new Date().toISOString() });
+        setStudyPlan(generated);
+      });
 
       // 2. Load tasks
       const allTasks = await fetchAllTasks(user.uid);
@@ -43,7 +82,7 @@ function StudyPlan() {
       setCourses(allCourses);
 
       // 4. Load saved plan
-      const planRef  = doc(db, "users", user.uid, "settings", "studyPlan");
+      const planRef = doc(db, "users", user.uid, "settings", "studyPlan");
       const planSnap = await getDoc(planRef);
       if (planSnap.exists()) {
         setStudyPlan(planSnap.data().plan || []);
@@ -51,13 +90,13 @@ function StudyPlan() {
 
       setLoading(false);
     });
-    return () => unsubscribe();
+    return () => { unsubscribe(); if (unsubAvail) unsubAvail(); };
   }, []);
 
   // ── Helper: add hours to time string ──
   const addHours = (time, hours) => {
     const [h, m] = time.split(":").map(Number);
-    const total  = h * 60 + m + Math.round(Number(hours) * 60);
+    const total = h * 60 + m + Math.round(Number(hours) * 60);
     return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
   };
 
@@ -139,6 +178,7 @@ function StudyPlan() {
     setGenerating(false);
   };
 
+
   const clearPlan = async () => {
     if (!uid) return;
     const planRef = doc(db, "users", uid, "settings", "studyPlan");
@@ -148,8 +188,12 @@ function StudyPlan() {
 
   if (loading) return <p style={{ textAlign: 'center', padding: '40px' }}>Loading...</p>;
 
-  const pendingTasks  = tasks.filter(t => !t.completed);
+  const pendingTasks = tasks.filter(t => !t.completed);
   const availableDays = availability.filter(d => d.slots?.some(s => s.available));
+  console.log("availableDays", availableDays);
+  console.log("availability", availability);
+
+
 
   return (
     <div className="sp-page">
@@ -229,7 +273,11 @@ function StudyPlan() {
             <p className="sp-empty">No study plan generated yet.</p>
           ) : (
             WEEK_DAYS.map((day) => {
+              console.log("day", day);
+
               const dayPlans = studyPlan.filter(p => p.day === day);
+              console.log("dayPlans", dayPlans);
+
               if (dayPlans.length === 0) return null;
               return (
                 <div className="sp-day-section" key={day}>

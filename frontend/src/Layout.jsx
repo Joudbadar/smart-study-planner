@@ -2,15 +2,16 @@ import { useRef, useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import { getFirestore, doc, getDoc, updateDoc } from "firebase/firestore";
+import React from 'react';
 
 const NAV_ITEMS = [
-  { icon: '🏠', label: 'Dashboard',           path: '/dashboard'    },
-  { icon: '📖', label: 'My Courses',           path: '/courses'      },
-  { icon: '📅', label: 'Study Schedule',       path: '/schedule'     },
-  { icon: '✅', label: 'Tasks & Deadlines',    path: '/tasks'        },
-  { icon: '📊', label: 'Progress & Analytics', path: '/track'        },
-  { icon: '🕒', label: 'Weekly Availability',  path: '/availability' },
-  { icon: '📅', label: 'Study Plan',           path: '/study-plan'   },
+  { icon: '🏠', label: 'Dashboard', path: '/dashboard' },
+  { icon: '📖', label: 'My Courses', path: '/courses' },
+  { icon: '✅', label: 'Tasks & Deadlines', path: '/tasks' },
+  { icon: '📅', label: 'Study Schedule', path: '/schedule' },
+  { icon: '📊', label: 'Progress & Analytics', path: '/track' },
+  { icon: '🕒', label: 'Weekly Availability', path: '/availability' },
+  { icon: '📅', label: 'Study Plan', path: '/study-plan' },
 ];
 
 const EMOJI_OPTIONS = ['\u{1F427}', '\u{1F428}', '\u{1F98A}', '\u{1F438}', '\u{1F98B}', '\u{1F43C}', '\u{1F984}', '\u{1F419}', '\u{1F981}', '\u{1F996}'];
@@ -20,10 +21,12 @@ export default function Layout({ children }) {
   const navigate = useNavigate();
   const [profileOpen, setProfileOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [displayName, setDisplayName] = useState('User');
+  // const [displayName, setDisplayName] = useState('User');
   const [emoji, setEmoji] = useState('\u{1F427}');
   const profileRef = useRef(null);
   const menuRef = useRef(null);
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 750);
+  const name = localStorage.getItem("userName") || "User";
 
   // No useEffect needed — menu is closed via onClick on each Link
 
@@ -32,7 +35,7 @@ export default function Layout({ children }) {
     const db = getFirestore();
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        setDisplayName(user.displayName || 'User');
+        // setDisplayName(user.displayName || 'User');
         const snap = await getDoc(doc(db, "users", user.uid));
         if (snap.exists()) setEmoji(snap.data().emoji || '\u{1F427}');
       }
@@ -69,6 +72,15 @@ export default function Layout({ children }) {
     await updateDoc(doc(db, "users", user.uid), { emoji: newEmoji });
   };
 
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsDesktop(window.innerWidth >= 750);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   return (
     <div className="dashboard">
 
@@ -135,7 +147,10 @@ export default function Layout({ children }) {
           )}
         </div>
 
-        <div className="logo">📚 Smart Study Planner</div>
+        {/* <div className="logo">📚 Smart Study Planner</div> */}
+        <div  style={{fontSize:'1.5rem', fontWeight:'800', background:'linear-gradient(135deg, #e67a5f, #ee9b85)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>
+          📚 Smart Study Planner
+        </div>
 
         <div className="header-right">
           <div className="user-profile" ref={profileRef} style={{ position: 'relative' }}>
@@ -151,7 +166,7 @@ export default function Layout({ children }) {
               <div className="user-avatar" style={{ fontSize: '18px', background: 'none' }}>
                 {emoji}
               </div>
-              <span className="user-name">{displayName}</span>
+              <span className="user-name">{name}</span>
               <span style={{
                 fontSize: '10px', color: '#888', transition: 'transform 0.2s',
                 transform: profileOpen ? 'rotate(180deg)' : 'rotate(0deg)',
@@ -205,27 +220,32 @@ export default function Layout({ children }) {
             )}
           </div>
         </div>
-      </header>
+      </header >
 
-      <div className="container">
-        {/* ── Sidebar (desktop only) ── */}
-        <aside className="sidebar">
-          <nav>
+      <div className="w-full flex">
+        {/* Fixed Sidebar */}
+        <aside className="fixed top-0 left-0 w-64 md:block hidden  h-screen bg-white overflow-y-auto shadow-md md:block hidden" style={{ paddingTop: '120px' }}>
+          <div>
             {NAV_ITEMS.map(({ icon, label, path }) => (
               <Link
                 key={label}
                 to={path}
-                className={`nav-item ${location.pathname === path ? 'active' : ''}`}
+                className={`nav-item ${location.pathname === path ? "active" : ""
+                  }`}
               >
                 <span className="nav-icon">{icon}</span>
                 <span>{label}</span>
               </Link>
             ))}
-          </nav>
+          </div>
         </aside>
 
-        {/* ── Page content ── */}
-        <main className="main-content">
+
+        {/* Page Content */}
+        <main
+          className="flex-1 min-w-0 min-h-screen p-8"
+          style={{ marginLeft: isDesktop ? '16rem' : '0' , padding:'2rem' }}
+        >
           {children}
         </main>
       </div>
@@ -243,6 +263,6 @@ export default function Layout({ children }) {
           .user-name { display: none; }
         }
       `}</style>
-    </div>
+    </div >
   );
 }
