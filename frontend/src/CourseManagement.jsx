@@ -75,9 +75,10 @@ export default function CourseManagement() {
     if (!form.name.trim())       e.name        = "Required";
     if (!form.instructor.trim()) e.instructor   = "Required";
     if (!form.creditHours)       e.creditHours  = "Required";
-    if (!form.hoursPerWeek)                  e.hoursPerWeek = "Required";
-    else if (Number(form.hoursPerWeek) < 1)  e.hoursPerWeek = "Minimum is 1 hour per week.";
-    else if (Number(form.hoursPerWeek) > 6)  e.hoursPerWeek = "Maximum is 6 hours per week.";
+    const hw = Number(form.hoursPerWeek);
+    if (form.hoursPerWeek === "" || form.hoursPerWeek === null) e.hoursPerWeek = "Required";
+    else if (isNaN(hw) || hw < 1) e.hoursPerWeek = "Minimum is 1 hour per week.";
+    else if (hw > 6)              e.hoursPerWeek = "Maximum is 6 hours per week.";
     if (!form.semester)          e.semester     = "Required";
     if (!form.difficulty)        e.difficulty   = "Required";
     return e;
