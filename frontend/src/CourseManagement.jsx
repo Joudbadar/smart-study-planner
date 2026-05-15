@@ -26,8 +26,7 @@ export default function CourseManagement() {
   const [errors, setErrors]           = useState({});
   const [propagating, setPropagating] = useState(false);
 
-  // ── Custom confirm modal ──
-  const [confirmOpen, setConfirmOpen]   = useState(false);
+  const [confirmOpen, setConfirmOpen]         = useState(false);
   const [confirmCourseId, setConfirmCourseId] = useState(null);
 
   const uid = getAuth().currentUser?.uid;
@@ -79,6 +78,15 @@ export default function CourseManagement() {
     else if (Number(form.hoursPerWeek) > 6)  e.hoursPerWeek = "Maximum is 6 hours per week.";
     if (!form.semester)          e.semester     = "Required";
     if (!form.difficulty)        e.difficulty   = "Required";
+
+    // Check duplicate name + code
+    const duplicate = courses.find(c =>
+      c.id !== editingId &&
+      c.name.trim().toLowerCase() === form.name.trim().toLowerCase() &&
+      (c.code || '').trim().toLowerCase() === (form.code || '').trim().toLowerCase()
+    );
+    if (duplicate) e.name = "A course with the same name and code already exists.";
+
     return e;
   };
 
@@ -119,7 +127,6 @@ export default function CourseManagement() {
     closeModal();
   };
 
-  // ── Custom confirm remove ──
   const handleRemoveClick = (id) => {
     setConfirmCourseId(id);
     setConfirmOpen(true);
@@ -239,11 +246,7 @@ export default function CourseManagement() {
             </p>
             <div className="cm-modal-actions">
               <button className="cm-btn-cancel" onClick={handleCancelRemove}>Cancel</button>
-              <button
-                className="cm-btn-primary"
-                onClick={handleConfirmRemove}
-                style={{ background: 'linear-gradient(135deg, #f44336, #e57373)' }}
-              >
+              <button className="cm-btn-primary" onClick={handleConfirmRemove} style={{ background: 'linear-gradient(135deg, #f44336, #e57373)' }}>
                 🗑 Remove
               </button>
             </div>
@@ -265,7 +268,8 @@ export default function CourseManagement() {
 
             <div className="cm-form-group">
               <label className="cm-label">Course Code</label>
-              <input className="cm-input" placeholder="e.g., SWE 381" value={form.code} onChange={e => handleChange("code", e.target.value)} />
+              <input className={`cm-input ${errors.code ? "cm-err" : ""}`} placeholder="e.g., SWE 381" value={form.code} onChange={e => handleChange("code", e.target.value)} />
+              {errors.code && <span className="cm-error-msg">{errors.code}</span>}
             </div>
 
             <div className="cm-form-group">
