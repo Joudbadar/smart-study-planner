@@ -26,6 +26,10 @@ export default function CourseManagement() {
   const [errors, setErrors]           = useState({});
   const [propagating, setPropagating] = useState(false);
 
+  // ── Custom confirm modal ──
+  const [confirmOpen, setConfirmOpen]   = useState(false);
+  const [confirmCourseId, setConfirmCourseId] = useState(null);
+
   const uid = getAuth().currentUser?.uid;
 
   useEffect(() => {
@@ -45,12 +49,7 @@ export default function CourseManagement() {
   const totalCredits = courses.reduce((s, c) => s + (Number(c.creditHours)  || 0), 0);
   const totalHours   = courses.reduce((s, c) => s + (Number(c.hoursPerWeek) || 0), 0);
 
-  const openAdd = () => {
-    setEditingId(null);
-    setForm(emptyForm);
-    setErrors({});
-    setModalOpen(true);
-  };
+  const openAdd = () => { setEditingId(null); setForm(emptyForm); setErrors({}); setModalOpen(true); };
 
   const openEdit = (course) => {
     setEditingId(course.id);
@@ -75,10 +74,9 @@ export default function CourseManagement() {
     if (!form.name.trim())       e.name        = "Required";
     if (!form.instructor.trim()) e.instructor   = "Required";
     if (!form.creditHours)       e.creditHours  = "Required";
-    const hw = Number(form.hoursPerWeek);
-    if (form.hoursPerWeek === "" || form.hoursPerWeek === null) e.hoursPerWeek = "Required";
-    else if (isNaN(hw) || hw < 1) e.hoursPerWeek = "Minimum is 1 hour per week.";
-    else if (hw > 6)              e.hoursPerWeek = "Maximum is 6 hours per week.";
+    if (!form.hoursPerWeek)                  e.hoursPerWeek = "Required";
+    else if (Number(form.hoursPerWeek) < 1)  e.hoursPerWeek = "Minimum is 1 hour per week.";
+    else if (Number(form.hoursPerWeek) > 6)  e.hoursPerWeek = "Maximum is 6 hours per week.";
     if (!form.semester)          e.semester     = "Required";
     if (!form.difficulty)        e.difficulty   = "Required";
     return e;
@@ -121,14 +119,26 @@ export default function CourseManagement() {
     closeModal();
   };
 
-  const handleRemove = async (id) => {
-    if (!window.confirm("Remove this course?")) return;
+  // ── Custom confirm remove ──
+  const handleRemoveClick = (id) => {
+    setConfirmCourseId(id);
+    setConfirmOpen(true);
+  };
+
+  const handleConfirmRemove = async () => {
+    setConfirmOpen(false);
     try {
-      await deleteCourse(uid, id);
-      setCourses(cs => cs.filter(c => c.id !== id));
+      await deleteCourse(uid, confirmCourseId);
+      setCourses(cs => cs.filter(c => c.id !== confirmCourseId));
     } catch (err) {
       console.error("Failed to delete course:", err);
     }
+    setConfirmCourseId(null);
+  };
+
+  const handleCancelRemove = () => {
+    setConfirmOpen(false);
+    setConfirmCourseId(null);
   };
 
   return (
@@ -210,7 +220,7 @@ export default function CourseManagement() {
 
                 <div className="cm-card-actions">
                   <button className="cm-btn-edit"   onClick={() => openEdit(course)}>✏ Edit</button>
-                  <button className="cm-btn-remove" onClick={() => handleRemove(course.id)}>🗑 Remove</button>
+                  <button className="cm-btn-remove" onClick={() => handleRemoveClick(course.id)}>🗑 Remove</button>
                 </div>
               </div>
             );
@@ -218,6 +228,30 @@ export default function CourseManagement() {
         </div>
       )}
 
+      {/* ── Custom Confirm Modal ── */}
+      {confirmOpen && (
+        <div className="cm-overlay" onClick={handleCancelRemove}>
+          <div className="cm-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '380px', textAlign: 'center' }}>
+            <div style={{ fontSize: '48px', marginBottom: '12px' }}>🗑</div>
+            <h2 className="cm-modal-title">Remove Course?</h2>
+            <p style={{ color: '#777', fontSize: '14px', margin: '8px 0 24px' }}>
+              This will permanently remove the course and all its data. This action cannot be undone.
+            </p>
+            <div className="cm-modal-actions">
+              <button className="cm-btn-cancel" onClick={handleCancelRemove}>Cancel</button>
+              <button
+                className="cm-btn-primary"
+                onClick={handleConfirmRemove}
+                style={{ background: 'linear-gradient(135deg, #f44336, #e57373)' }}
+              >
+                🗑 Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Add / Edit Modal ── */}
       {modalOpen && (
         <div className="cm-overlay" onClick={(e) => e.target === e.currentTarget && closeModal()}>
           <div className="cm-modal">
