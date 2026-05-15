@@ -9,11 +9,17 @@ function getTodayStr() {
   return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
 }
 
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr + 'T00:00:00');
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
 const EMPTY_FORM = {
   title: '',
   courseId: '',
   course: '',
-  dueDate: '', dueDay: '', dueMonth: '', dueYear: '2026',
+  dueDate: '',
   priority: 'medium',
 };
 
@@ -37,7 +43,6 @@ export default function TasksDeadlines() {
   const [uid, setUid] = useState(null);
   const db = getFirestore();
 
-  // Wait for Firebase Auth to restore session before fetching
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(getAuth(), (user) => {
       setUid(user?.uid ?? null);
@@ -54,7 +59,6 @@ export default function TasksDeadlines() {
     });
   }, [uid]);
 
-  // Fetch courses when either modal opens
   useEffect(() => {
     if ((!showForm && !showEditForm) || !uid) return;
     const loadCourses = async () => {
@@ -99,18 +103,13 @@ export default function TasksDeadlines() {
     setDeadlines(prev => prev.filter(t => t.id !== id));
   };
 
-  // Open edit modal pre-filled with task data
   const openEdit = (task) => {
     setEditingTask(task);
-    const [year, month, day] = (task.dueDate || '').split('-');
     setEditForm({
       title: task.title || '',
       courseId: task.courseId || '',
       course: task.course || '',
       dueDate: task.dueDate || '',
-      dueDay: day || '',
-      dueMonth: month || '',
-      dueYear: year || '2026',
       priority: task.priority || 'medium',
     });
     setShowEditForm(true);
@@ -119,9 +118,7 @@ export default function TasksDeadlines() {
   const handleEditSave = async () => {
     if (!editForm.courseId) return alert('Please select a course.');
     if (!editForm.title)    return alert('Please enter a task title.');
-    if (!editForm.dueDay)   return alert('Please select a day.');
-    if (!editForm.dueMonth) return alert('Please select a month.');
-    if (!editForm.dueDate)  return alert('Please select both day and month.');
+    if (!editForm.dueDate)  return alert('Please select a due date.');
     if (editForm.dueDate < getTodayStr()) return alert('Due date must be today or in the future.');
 
     const updatedData = {
@@ -133,7 +130,6 @@ export default function TasksDeadlines() {
 
     await updateTask(uid, editingTask.courseId, editingTask.id, updatedData);
 
-    // If title changed, propagate to sessions
     if (editForm.title !== editingTask.title) {
       try {
         await propagateTaskEdit(uid, editingTask.courseId, editingTask.id, editForm.title);
@@ -152,9 +148,7 @@ export default function TasksDeadlines() {
   const handleAdd = async () => {
     if (!form.courseId) return alert('Please select a course.');
     if (!form.title)    return alert('Please enter a task title.');
-    if (!form.dueDay)   return alert('Please select a day.');
-    if (!form.dueMonth) return alert('Please select a month.');
-    if (!form.dueDate)  return alert('Please select both day and month.');
+    if (!form.dueDate)  return alert('Please select a due date.');
     if (form.dueDate < getTodayStr()) return alert('Due date must be today or in the future.');
 
     const newTask = {
@@ -178,60 +172,6 @@ export default function TasksDeadlines() {
     if (filter === 'All') return true;
     return item.priority === filter.toLowerCase();
   });
-
-  const dueDateSelectors = (currentForm, setCurrentForm) => (
-    <div className="modal-row">
-      <div className="modal-col">
-        <select
-          className="modal-input"
-          value={currentForm.dueDay}
-          onChange={e => setCurrentForm(prev => ({
-            ...prev,
-            dueDay: e.target.value,
-            dueDate: prev.dueMonth ? `${prev.dueYear}-${prev.dueMonth}-${e.target.value}` : ''
-          }))}
-        >
-          <option value="">Day</option>
-          {Array.from({ length: 31 }, (_, i) => i + 1).map(d => (
-            <option key={d} value={String(d).padStart(2, '0')}>{d}</option>
-          ))}
-        </select>
-      </div>
-      <div className="modal-col">
-        <select
-          className="modal-input"
-          value={currentForm.dueMonth}
-          onChange={e => setCurrentForm(prev => ({
-            ...prev,
-            dueMonth: e.target.value,
-            dueDate: prev.dueDay ? `${prev.dueYear}-${e.target.value}-${prev.dueDay}` : ''
-          }))}
-        >
-          <option value="">Month</option>
-          {['01','02','03','04','05','06','07','08','09','10','11','12'].map((m, i) => (
-            <option key={m} value={m}>
-              {['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][i]}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="modal-col">
-        <select
-          className="modal-input"
-          value={currentForm.dueYear}
-          onChange={e => setCurrentForm(prev => ({
-            ...prev,
-            dueYear: e.target.value,
-            dueDate: (prev.dueDay && prev.dueMonth) ? `${e.target.value}-${prev.dueMonth}-${prev.dueDay}` : ''
-          }))}
-        >
-          <option value="2026">2026</option>
-          <option value="2027">2027</option>
-          <option value="2028">2028</option>
-        </select>
-      </div>
-    </div>
-  );
 
   if (loading) return <p>Loading tasks...</p>;
 
@@ -275,10 +215,13 @@ export default function TasksDeadlines() {
             />
 
             <label className="modal-label">Due Date <span className="modal-required">*</span></label>
-            <small style={{ color: '#888', marginBottom: '6px', display: 'block' }}>
-              Must be today ({getTodayStr()}) or later
-            </small>
-            {dueDateSelectors(form, setForm)}
+            <input
+              className="modal-input"
+              type="date"
+              value={form.dueDate}
+              min={getTodayStr()}
+              onChange={e => setForm(prev => ({ ...prev, dueDate: e.target.value }))}
+            />
 
             <label className="modal-label">Priority</label>
             <select
@@ -329,10 +272,13 @@ export default function TasksDeadlines() {
             />
 
             <label className="modal-label">Due Date <span className="modal-required">*</span></label>
-            <small style={{ color: '#888', marginBottom: '6px', display: 'block' }}>
-              Must be today ({getTodayStr()}) or later
-            </small>
-            {dueDateSelectors(editForm, setEditForm)}
+            <input
+              className="modal-input"
+              type="date"
+              value={editForm.dueDate}
+              min={getTodayStr()}
+              onChange={e => setEditForm(prev => ({ ...prev, dueDate: e.target.value }))}
+            />
 
             <label className="modal-label">Priority</label>
             <select
@@ -398,7 +344,7 @@ export default function TasksDeadlines() {
             <div className="task-info-section">
               <div className="task-title">{item.title}</div>
               <div className="task-course-name">{item.course}</div>
-              <div className="task-due-date">📅 Due: {item.dueDate}</div>
+              <div className="task-due-date">📅 Due: {formatDate(item.dueDate)}</div>
             </div>
 
             <div className="task-action-buttons">

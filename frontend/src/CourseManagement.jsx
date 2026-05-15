@@ -75,7 +75,9 @@ export default function CourseManagement() {
     if (!form.name.trim())       e.name        = "Required";
     if (!form.instructor.trim()) e.instructor   = "Required";
     if (!form.creditHours)       e.creditHours  = "Required";
-    if (!form.hoursPerWeek)      e.hoursPerWeek = "Required";
+    if (!form.hoursPerWeek)                  e.hoursPerWeek = "Required";
+    else if (Number(form.hoursPerWeek) < 1)  e.hoursPerWeek = "Minimum is 1 hour per week.";
+    else if (Number(form.hoursPerWeek) > 6)  e.hoursPerWeek = "Maximum is 6 hours per week.";
     if (!form.semester)          e.semester     = "Required";
     if (!form.difficulty)        e.difficulty   = "Required";
     return e;
@@ -248,7 +250,7 @@ export default function CourseManagement() {
               </div>
               <div className="cm-form-group">
                 <label className="cm-label">Hours / Week <span className="cm-req">*</span></label>
-                <input type="number" min="1" max="20" className={`cm-input ${errors.hoursPerWeek ? "cm-err" : ""}`} placeholder="e.g., 4" value={form.hoursPerWeek} onChange={e => handleChange("hoursPerWeek", e.target.value)} />
+                <input type="number" min="1" max="6" className={`cm-input ${errors.hoursPerWeek ? "cm-err" : ""}`} placeholder="e.g., 4" value={form.hoursPerWeek} onChange={e => handleChange("hoursPerWeek", e.target.value)} />
                 {errors.hoursPerWeek && <span className="cm-error-msg">{errors.hoursPerWeek}</span>}
               </div>
             </div>

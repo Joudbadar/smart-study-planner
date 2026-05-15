@@ -1,32 +1,16 @@
-.wa-page {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  padding: 2rem;
-  background: #fdf3ef;
-  min-height: 100vh;
-}
+/* WeeklyAvailability.css
+   Only WA-specific overrides live here.
+   Layout, modal shell, modal-label, modal-input, modal-actions,
+   modal-cancel, modal-save, schedule-header, schedule-title, and
+   add-session-button all come from ScheduleAndTasks.css.
+*/
 
-.wa-title {
-  text-align: center;
-  font-size: 2.2rem;
-  font-weight: 800;
-  color: #2d2d2d;
-  margin-bottom: 0.5rem;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-}
-
-.wa-subtitle {
-  text-align: center;
-  color: #666;
-  font-size: 1.2rem;
-  margin-bottom: 2rem;
-}
-
+/* ── Day cards grid ── */
 .wa-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
   gap: 1.2rem;
-  max-width: 950px;
-  margin: auto;
+  margin-top: 1.5rem;
 }
 
 .wa-card {
@@ -42,74 +26,31 @@
 
 .wa-card:hover { transform: translateY(-4px); }
 
-.wa-available  { background: #f5faef; border-color: #b8d892; }
+.wa-available   { background: #f5faef; border-color: #b8d892; }
 .wa-unavailable { background: #ffffff; border-color: #e3e3e3; }
 
-.wa-day {
-  font-size: 2rem;
-  font-weight: 800;
-  color: #2d2d2d;
-  margin-bottom: 0.8rem;
-}
-
-.wa-time { color: #666; font-size: 1.05rem; margin-bottom: 1rem; }
+.wa-day  { font-size: 1.6rem; font-weight: 800; color: #2d2d2d; margin-bottom: 0.6rem; }
+.wa-time { color: #666; font-size: 0.9rem; margin-bottom: 1rem; line-height: 1.5; }
 
 .wa-status {
   display: inline-block;
-  padding: 0.5rem 1rem;
+  padding: 0.4rem 1rem;
   border-radius: 999px;
   font-weight: 700;
-  font-size: 0.95rem;
+  font-size: 0.88rem;
 }
 
 .available-text   { background: #dcecc7; color: #5d8b35; }
 .unavailable-text { background: #ececec; color: #777; }
 
-.wa-actions { display: flex; justify-content: center; margin-top: 2rem; }
-
-.wa-btn {
-  background: linear-gradient(135deg, #e67a5f, #ee9b85);
-  color: white;
-  border: none;
-  border-radius: 14px;
-  padding: 1rem 2.5rem;
-  font-size: 1rem;
-  font-weight: 700;
-  cursor: pointer;
-  box-shadow: 0 8px 20px rgba(230,122,95,0.25);
-  transition: 0.25s ease;
-}
-
-.wa-btn:hover { transform: translateY(-2px); }
-
-/* ── Modal ── */
-.wa-modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.35);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-}
-
-.wa-modal {
-  background: white;
-  width: 420px;
-  max-width: 90%;
-  max-height: 85vh;
-  overflow-y: auto;
-  border-radius: 24px;
-  padding: 2rem;
-  box-shadow: 0 25px 70px rgba(0,0,0,0.2);
-}
-
-.wa-modal h2 {
-  text-align: center;
-  margin-bottom: 1.5rem;
-  color: #2d2d2d;
-  font-size: 1.4rem;
-  font-weight: 800;
+/* ── Slot box (inside modal) ── */
+.wa-slot-box {
+  background: #fef6f4;
+  border: 1px solid #f0d5cf;
+  border-radius: 16px;
+  padding: 1.2rem;
+  margin-bottom: 1rem;
+  position: relative;   /* anchors the tp-dropdown */
 }
 
 .wa-empty-slot {
@@ -119,15 +60,7 @@
   font-size: 0.95rem;
 }
 
-/* ── Slot Box ── */
-.wa-slot-box {
-  background: #fef6f4;
-  border: 1px solid #f0d5cf;
-  border-radius: 16px;
-  padding: 1.2rem;
-  margin-bottom: 1rem;
-}
-
+/* ── Available / Unavailable toggle ── */
 .wa-check-group {
   display: flex;
   gap: 1rem;
@@ -156,30 +89,20 @@
 .wa-active-check   { background: #eef8e5; border-color: #a8d27f; color: #5f8d39; }
 .wa-active-uncheck { background: #f3f3f3; border-color: #d9d9d9; color: #777; }
 
-.wa-modal-label {
-  display: block;
-  margin: 0.8rem 0 0.4rem;
-  font-weight: 700;
-  color: #2d2d2d;
-  font-size: 0.9rem;
-}
-
-.wa-modal-input {
+/* ── Time trigger button (styled to match modal-input) ── */
+.wa-time-trigger {
   width: 100%;
-  padding: 0.8rem 1rem;
-  border-radius: 12px;
-  border: 1px solid #f0d5cf;
-  background: white;
-  font-size: 1rem;
-  color: #2d2d2d;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  text-align: left;
 }
 
-.wa-modal-input:focus {
-  outline: none;
-  border-color: #e67a5f;
-  box-shadow: 0 0 0 3px rgba(230,122,95,0.12);
-}
+.wa-placeholder { color: #aaa; }
+.wa-clock-icon  { font-size: 1.1rem; flex-shrink: 0; }
 
+/* ── Delete / Add slot buttons ── */
 .wa-delete-slot-btn {
   margin-top: 1rem;
   width: 100%;
@@ -196,7 +119,6 @@
 
 .wa-delete-slot-btn:hover { background: #ffe0e0; }
 
-/* ── Add Slot Button ── */
 .wa-add-slot-btn {
   width: 100%;
   padding: 0.8rem;
@@ -213,36 +135,91 @@
 
 .wa-add-slot-btn:hover { background: #fef6f4; border-color: #e67a5f; }
 
-/* ── Modal Actions ── */
-.wa-modal-actions {
-  display: flex;
-  gap: 1rem;
-  margin-top: 1.5rem;
-  position: sticky;
-  bottom: 0;
-  background: white;
-  padding-top: 1rem;
+/* ── Time Picker Dropdown ── */
+.tp-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
 }
 
-.wa-cancel-btn,
-.wa-save-btn {
-  flex: 1;
-  padding: 0.9rem;
-  border: none;
+.tp-dropdown {
+  position: absolute;
+  background: #2b2b2b;
   border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+  width: 280px;
+  z-index: 10001;
+  margin-top: 4px;
+}
+
+.tp-selected-row {
+  display: flex;
+  background: #2b2b2b;
+  padding: 0.5rem 0.5rem 0;
+  gap: 6px;
+}
+
+.tp-selected-cell {
+  flex: 1;
+  background: #6aaad4;
+  color: white;
+  font-size: 1.3rem;
   font-weight: 700;
-  font-size: 1rem;
+  text-align: center;
+  padding: 0.6rem 0;
+  border-radius: 8px;
+}
+
+.tp-columns {
+  display: flex;
+  gap: 6px;
+  padding: 0.5rem;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.tp-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tp-cell {
+  text-align: center;
+  padding: 0.55rem 0;
+  border-radius: 6px;
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: #ccc;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.tp-cell:hover       { background: #3a3a3a; color: white; }
+.tp-cell-active      { background: #6aaad4; color: white; font-weight: 700; }
+
+.tp-actions {
+  display: flex;
+  gap: 8px;
+  padding: 0.5rem;
+  background: #2b2b2b;
+}
+
+.tp-cancel-btn,
+.tp-confirm-btn {
+  flex: 1;
+  padding: 0.6rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 700;
   cursor: pointer;
   transition: 0.2s;
 }
 
-.wa-cancel-btn { background: #f1f1f1; color: #777; }
-.wa-cancel-btn:hover { background: #e8e8e8; }
-
-.wa-save-btn {
-  background: linear-gradient(135deg, #e67a5f, #ee9b85);
-  color: white;
-  box-shadow: 0 4px 12px rgba(230,122,95,0.25);
-}
-
-.wa-save-btn:hover { opacity: 0.9; }
+.tp-cancel-btn          { background: #3d3d3d; color: #aaa; }
+.tp-cancel-btn:hover    { background: #484848; }
+.tp-confirm-btn         { background: #6aaad4; color: white; }
+.tp-confirm-btn:hover   { opacity: 0.88; }
