@@ -41,7 +41,7 @@ export default function Dashboard() {
     const upcoming = tasks
       .filter(t => !t.completed)
       .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
-      .slice(0, 4);
+    
     setDeadlines(upcoming);
 
     // 3. Courses
@@ -80,17 +80,49 @@ export default function Dashboard() {
                          allSessions.filter(s => s.status === 'completed').length;
   const completionRate = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
 
-  const studyHours = weekSessions.reduce((sum, s) => {
+  const studyHours = allSessions
+  .filter((s) => {
+    // Only count completed sessions
+    if (s.status !== 'completed') return false;
+
+    // Must have a valid date
+    if (!s.date) return false;
+
+    // Get the current week's Sunday and Saturday
+    const now = new Date();
+    const sunday = new Date(now);
+    sunday.setDate(now.getDate() - now.getDay());
+    sunday.setHours(0, 0, 0, 0);
+
+    const saturday = new Date(sunday);
+    saturday.setDate(sunday.getDate() + 6);
+    saturday.setHours(23, 59, 59, 999);
+
+    // Session date
+    const sessionDate = new Date(s.date + 'T00:00:00');
+
+    // Keep only sessions in the current week
+    return sessionDate >= sunday && sessionDate <= saturday;
+  })
+  .reduce((sum, s) => {
     if (!s.time) return sum;
+
     const [start, end] = s.time.split(' - ');
     if (!start || !end) return sum;
-    const toMin = t => { const [h, m] = t.split(':').map(Number); return h * 60 + (m || 0); };
-    return sum + (toMin(end) - toMin(start)) / 60;
+
+    const toMinutes = (time) => {
+      const [h, m] = time.trim().split(':').map(Number);
+      return h * 60 + (m || 0);
+    };
+
+    const duration = (toMinutes(end) - toMinutes(start)) / 60;
+
+    return duration > 0 ? sum + duration : sum;
   }, 0);
 
   const STATS = [
     { icon: Clock, value: `${studyHours.toFixed(1)}h`, label: 'Study Hours This Week' },
-    { icon: CheckCircle2, value: `${allSessions.filter(s => s.status === 'completed').length}/${allSessions.length}`, label: 'Completed Tasks' },
+    { icon: CheckCircle2, value: `${allTasks.filter(t => t.completed === true).length}/${allTasks.length}`, label: 'Completed Tasks' },
     { icon: FileText, value: deadlines.length, label: 'Upcoming Deadlines' },
     { icon: TrendingUp, value: `${completionRate}%`, label: 'Completion Rate' },
   ];
