@@ -1,4 +1,3 @@
-
 .ss-avail-slot {
   height: 28px;
   border-radius: 6px;
@@ -18,8 +17,6 @@
   border-radius: 16px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
   overflow: hidden;
-  flex: 1;
-  min-height: 0;
 }
 
 .ss-calendar-scroll {
@@ -80,16 +77,17 @@
   color: white;
 }
 
-/* ── Time rows ── */
+/* ── Time rows — no scroll, full height ── */
 .ss-time-body {
-  max-height: 560px;
-  overflow-y: auto;
+  /* Removed max-height and overflow-y so calendar expands fully */
 }
 
 .ss-time-row {
   display: grid;
   grid-template-columns: 60px repeat(7, 1fr);
   border-bottom: 1px solid #f5ece9;
+  /* Ensure rows align with header columns exactly */
+  box-sizing: border-box;
 }
 
 .ss-time-row:last-child {
@@ -102,12 +100,17 @@
   font-size: 11px;
   color: #bbb;
   border-right: 1px solid #f5ece9;
+  /* Match the header's first column exactly */
+  box-sizing: border-box;
+  width: 60px;
+  min-width: 60px;
 }
 
 .ss-time-cell {
   min-height: 70px;
   padding: 4px;
   border-right: 1px solid #f5ece9;
+  box-sizing: border-box;
   transition: background 0.15s;
 }
 
@@ -496,4 +499,3 @@
   cursor: pointer;
   font-size: 14px;
 }
-

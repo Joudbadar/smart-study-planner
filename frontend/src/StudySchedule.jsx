@@ -130,7 +130,12 @@ function scheduleTasks(pendingTasks, availability, existingSessions, weeksAhead 
         if (dateStr < today) continue;
         if (task.dueDate && dateStr > task.dueDate) continue;
 
-        for (const slot of availDay.slots.filter(s => s.available)) {
+        // ✅ FIX: sort slots by start time so earliest slot is always scheduled first
+        const sortedSlots = [...availDay.slots]
+          .filter(s => s.available)
+          .sort((a, b) => timeToMin(a.startTime) - timeToMin(b.startTime));
+
+        for (const slot of sortedSlots) {
           const slotStart = timeToMin(slot.startTime);
           const slotEnd   = timeToMin(slot.endTime);
 
@@ -201,21 +206,20 @@ export default function StudySchedule() {
   useEffect(() => { availabilityRef.current = availability; }, [availability]);
   useEffect(() => { uidRef.current = uid; }, [uid]);
 
-  // طلب إذن الإشعارات من المتصفح
+  // Request browser notification permission
   useEffect(() => {
     if ('Notification' in window && Notification.permission === 'default') {
       Notification.requestPermission();
     }
   }, []);
 
-  
   useEffect(() => {
     if (loading || schedule.length === 0) return;
 
     const checkUpcomingSessions = () => {
       const today = getTodayStr();
       const nowMin = getNowMin();
-      
+
       const todaysSessions = scheduleRef.current.filter(
         s => s.date === today && s.status !== 'completed' && s.status !== 'missed'
       );
@@ -239,7 +243,6 @@ export default function StudySchedule() {
 
     checkUpcomingSessions();
     const intervalId = setInterval(checkUpcomingSessions, 60000);
-
     return () => clearInterval(intervalId);
   }, [schedule, loading]);
 
@@ -463,7 +466,6 @@ export default function StudySchedule() {
     await doRescheduleMissed(updated, [{ ...session, status: 'missed' }]);
   };
 
-  // تم إصلاح الدالة هنا بإزالة التكرار الزائد لـ doc()
   const saveAvailability = async () => {
     const currentUid = uidRef.current;
     if (!currentUid) return;
@@ -596,7 +598,7 @@ export default function StudySchedule() {
 
           <button className="add-session-button" style={{ background: '#f0f0f0', color: '#555' }}
             onClick={() => setShowAvailability(v => !v)}>
-             {showAvailability ? 'Hide' : 'Edit'} Availability
+            {showAvailability ? 'Hide' : 'Edit'} Availability
           </button>
 
           <button className="add-session-button" onClick={() => generateFullPlan()} disabled={generating}

@@ -9,7 +9,6 @@ import {
   CheckSquare,
   CalendarDays,
   BarChart3,
-  Bell,
   GraduationCap,
   User,
   LogOut,
@@ -130,7 +129,7 @@ export default function Layout({ children }) {
               overflow: 'hidden',
               animation: 'fadeSlideIn 0.2s ease',
             }}>
-              {NAV_ITEMS.map(({ icon: Icon, label, path }) => (
+              {NAV_ITEMS.map(({ icon: Icon, label, path }) => ( // eslint-disable-line no-unused-vars
                 <Link
                   key={label}
                   to={path}
@@ -258,7 +257,7 @@ export default function Layout({ children }) {
           style={{ width: '16rem', paddingTop: '120px', display: isDesktop ? 'block' : 'none' }}
         >
           <div>
-            {NAV_ITEMS.map(({ icon: Icon, label, path }) => (
+            {NAV_ITEMS.map(({ icon: Icon, label, path }) => ( // eslint-disable-line no-unused-vars
               <Link
                 key={label}
                 to={path}
@@ -285,7 +284,8 @@ export default function Layout({ children }) {
           from { opacity: 0; transform: translateY(-6px); }
           to   { opacity: 1; transform: translateY(0); }
         }
-        .profile-trigger:hover { background: rgba(0,0,0,0.05) !important; }
+        .profile-trigger:hover { background: none !important; }
+        .user-profile:hover { background: rgba(230, 122, 95, 0.08); border-radius: 999px; }
 
         @media (max-width: 768px) {
           .hamburger-btn { display: block !important; }
