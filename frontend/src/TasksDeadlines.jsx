@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, collection, getDocs } from 'firebase/firestore';
 import { fetchAllTasks, addTask, updateTask, deleteTask, propagateTaskEdit } from './services/TaskService';
+import { fetchSessions, updateSession } from './services/SessionService';
 import './TasksDeadlines.css';
 
 function getTodayStr() {
@@ -125,14 +126,29 @@ export default function TasksDeadlines() {
       const saved = await addTask(uid, form.courseId, newTask);
       setDeadlines(prev => [...prev, saved]);
     }
+    // Auto-generate plan when new task is added
+      const { generateFullPlan } = await import('./StudySchedule');
     closeModal();
   };
 
+  // Mark task as complete + mark all its sessions as completed
   const handleConfirmComplete = async () => {
     const { task } = actionModal;
     setActionModal(MODAL_NONE);
+
     await updateTask(uid, task.courseId, task.id, { completed: true });
     setDeadlines(prev => prev.map(t => t.id === task.id ? { ...t, completed: true } : t));
+
+    try {
+      const sessions = await fetchSessions(uid, task.courseId, task.id);
+      for (const session of sessions) {
+        if (session.status !== 'completed') {
+          await updateSession(uid, task.courseId, task.id, session.id, { status: 'completed' });
+        }
+      }
+    } catch (err) {
+      console.error('Failed to complete sessions:', err);
+    }
   };
 
   const handleConfirmDelete = async () => {
@@ -158,7 +174,7 @@ export default function TasksDeadlines() {
     <div className="w-full">
       <header className="cm-header">
         <h1 className="cm-title">Tasks & Deadlines</h1>
-       
+        <p className="cm-subtitle">Track your assignments, projects, and study priorities</p>
       </header>
 
       <div className="cm-summary">
@@ -235,11 +251,13 @@ export default function TasksDeadlines() {
             <div style={{ fontSize: '48px', marginBottom: '12px' }}>✅</div>
             <h2 className="cm-modal-title">Mark as Complete?</h2>
             <p style={{ color: '#777', fontSize: '14px', margin: '8px 0 24px' }}>
-              Are you sure you want to mark <strong>"{actionModal.task?.title}"</strong> as done? This cannot be undone.
+              Are you sure you want to mark <strong>"{actionModal.task?.title}"</strong> as done? All its study sessions will also be marked as completed.
             </p>
             <div className="cm-modal-actions">
               <button className="cm-btn-cancel" onClick={closeActionModal}>Cancel</button>
-              <button className="cm-btn-primary" onClick={handleConfirmComplete} style={{ background: 'linear-gradient(135deg, #4caf50, #81c784)' }}>✓ Mark Complete</button>
+              <button className="cm-btn-primary" onClick={handleConfirmComplete} style={{ background: 'linear-gradient(135deg, #4caf50, #81c784)' }}>
+                ✓ Mark Complete
+              </button>
             </div>
           </div>
         </div>
@@ -256,7 +274,9 @@ export default function TasksDeadlines() {
             </p>
             <div className="cm-modal-actions">
               <button className="cm-btn-cancel" onClick={closeActionModal}>Cancel</button>
-              <button className="cm-btn-primary" onClick={handleConfirmDelete} style={{ background: 'linear-gradient(135deg, #f44336, #e57373)' }}>🗑 Delete</button>
+              <button className="cm-btn-primary" onClick={handleConfirmDelete} style={{ background: 'linear-gradient(135deg, #f44336, #e57373)' }}>
+                🗑 Delete
+              </button>
             </div>
           </div>
         </div>

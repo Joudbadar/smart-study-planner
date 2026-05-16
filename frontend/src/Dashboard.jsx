@@ -90,7 +90,7 @@ export default function Dashboard() {
 
   const STATS = [
     { icon: Clock, value: `${studyHours.toFixed(1)}h`, label: 'Study Hours This Week' },
-    { icon: CheckCircle2, value: `${allSessions.filter(s => s.status === 'completed').length}/${allSessions.length}`, label: 'Completed Sessions' },
+    { icon: CheckCircle2, value: `${allSessions.filter(s => s.status === 'completed').length}/${allSessions.length}`, label: 'Completed Tasks' },
     { icon: FileText, value: deadlines.length, label: 'Upcoming Deadlines' },
     { icon: TrendingUp, value: `${completionRate}%`, label: 'Completion Rate' },
   ];
