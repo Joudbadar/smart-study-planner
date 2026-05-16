@@ -22,7 +22,6 @@ export async function signUp({ fullName, email, password }) {
     email: email,
     createdAt: new Date().toISOString(),
     role: "student",
-    emoji: '\u{1F427}',
   });
 
   return user;

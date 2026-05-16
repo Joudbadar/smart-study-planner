@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
-import { getFirestore, doc, getDoc, updateDoc } from "firebase/firestore";
+import { getFirestore, doc, getDoc } from "firebase/firestore";
 import React from 'react';
 import {
   LayoutDashboard,
@@ -11,6 +11,9 @@ import {
   CalendarDays,
   BarChart3,
   GraduationCap,
+  Bell,
+  User,
+  LogOut,
 } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -22,8 +25,6 @@ const NAV_ITEMS = [
   { icon: BarChart3,       label: 'Progress & Analytics',path: '/track' },
 ];
 
-const EMOJI_OPTIONS = ['\u{1F427}', '\u{1F428}', '\u{1F98A}', '\u{1F438}', '\u{1F98B}', '\u{1F43C}', '\u{1F984}', '\u{1F419}', '\u{1F981}', '\u{1F996}'];
-
 export default function Layout({ children }) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -32,9 +33,7 @@ export default function Layout({ children }) {
   const [menuOpen,    setMenuOpen]    = useState(false);
   const [isDesktop,   setIsDesktop]   = useState(window.innerWidth >= 750);
 
-  // Fix: use state for emoji and name so the UI re-renders when they change
-  const [name,  setName]  = useState(localStorage.getItem('userName') || 'User');
-  const [emoji, setEmoji] = useState(localStorage.getItem('emoji') || '\u{1F427}');
+  const [name, setName] = useState(localStorage.getItem('userName') || 'User');
 
   const profileRef = useRef(null);
   const menuRef    = useRef(null);
@@ -48,10 +47,6 @@ export default function Layout({ children }) {
         const snap = await getDoc(doc(db, 'users', user.uid));
         if (snap.exists()) {
           const data = snap.data();
-          if (data.emoji) {
-            setEmoji(data.emoji);
-            localStorage.setItem('emoji', data.emoji);
-          }
           if (data.name) {
             setName(data.name);
             localStorage.setItem('userName', data.name);
@@ -85,13 +80,6 @@ export default function Layout({ children }) {
     navigate('/');
   };
 
-  const handleEmojiChange = async (newEmoji) => {
-    const user = getAuth().currentUser;
-    if (!user) return;
-    setEmoji(newEmoji);
-    localStorage.setItem('emoji', newEmoji);
-    await updateDoc(doc(getFirestore(), 'users', user.uid), { emoji: newEmoji });
-  };
 
   return (
     <div className="dashboard">
@@ -183,8 +171,23 @@ export default function Layout({ children }) {
           </span>
         </div>
 
-        {/* Profile */}
-        <div className="header-right">
+        {/* Header right: bell + profile */}
+        <div className="header-right" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+
+          {/* Bell */}
+          <button style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'none', border: 'none', cursor: 'pointer',
+            padding: '8px', borderRadius: '8px', color: '#888',
+            transition: 'background 0.2s, color 0.2s',
+          }}
+            className="icon-btn"
+            title="Notifications"
+          >
+            <Bell size={20} />
+          </button>
+
+          {/* Profile dropdown */}
           <div className="user-profile" ref={profileRef} style={{ position: 'relative' }}>
             <button
               className="profile-trigger"
@@ -195,8 +198,14 @@ export default function Layout({ children }) {
                 padding: '4px 8px', borderRadius: '8px', transition: 'background 0.2s',
               }}
             >
-              <div className="user-avatar" style={{ fontSize: '18px', background: 'none' }}>
-                {emoji}
+              <div style={{
+                width: '32px', height: '32px', borderRadius: '50%',
+                background: 'linear-gradient(135deg, #fde0d6, #fef6f4)',
+                border: '1.5px solid #e67a5f',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0,
+              }}>
+                <User size={16} color="#e67a5f" />
               </div>
               <span className="user-name">{name}</span>
               <span style={{
@@ -213,40 +222,38 @@ export default function Layout({ children }) {
                 boxShadow: '0 8px 24px rgba(0,0,0,0.12)', minWidth: '180px',
                 zIndex: 1000, overflow: 'hidden', animation: 'fadeSlideIn 0.15s ease',
               }}>
+                {/* User info row */}
+                <div style={{
+                  padding: '12px 16px', borderBottom: '1px solid #f0f0f0',
+                  display: 'flex', alignItems: 'center', gap: '10px',
+                }}>
+                  <div style={{
+                    width: '36px', height: '36px', borderRadius: '50%',
+                    background: 'linear-gradient(135deg, #fde0d6, #fef6f4)',
+                    border: '1.5px solid #e67a5f',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    flexShrink: 0,
+                  }}>
+                    <User size={18} color="#e67a5f" />
+                  </div>
+                  <span style={{ fontSize: '14px', fontWeight: '600', color: '#2d2d2d' }}>{name}</span>
+                </div>
+
+                {/* Log out */}
                 <div style={{ padding: '6px 0' }}>
                   <button
                     onClick={handleLogout}
                     style={{
-                      display: 'block', width: '100%', padding: '9px 16px',
+                      display: 'flex', alignItems: 'center', gap: '8px',
+                      width: '100%', padding: '9px 16px',
                       textAlign: 'left', background: 'none', border: 'none',
                       cursor: 'pointer', fontSize: '14px', color: '#e53e3e',
                       transition: 'background 0.15s',
                     }}
                   >
-                    🚪 Log Out
+                    <LogOut size={15} />
+                    Log Out
                   </button>
-                </div>
-
-                <div style={{ padding: '8px', borderTop: '1px solid #f0f0f0' }}>
-                  <p style={{ fontSize: '12px', color: '#888', marginBottom: '6px', marginTop: 0 }}>
-                    Pick your emoji
-                  </p>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                    {EMOJI_OPTIONS.map(e => (
-                      <button
-                        key={e}
-                        onClick={() => handleEmojiChange(e)}
-                        style={{
-                          fontSize: '18px',
-                          background: emoji === e ? '#f0f0f0' : 'none',
-                          border:     emoji === e ? '2px solid #ccc' : '2px solid transparent',
-                          borderRadius: '6px', cursor: 'pointer', padding: '2px',
-                        }}
-                      >
-                        {e}
-                      </button>
-                    ))}
-                  </div>
                 </div>
               </div>
             )}
@@ -289,6 +296,7 @@ export default function Layout({ children }) {
           to   { opacity: 1; transform: translateY(0); }
         }
         .profile-trigger:hover { background: rgba(0,0,0,0.05) !important; }
+        .icon-btn:hover { background: rgba(0,0,0,0.05) !important; color: #e67a5f !important; }
 
         @media (max-width: 768px) {
           .hamburger-btn { display: block !important; }
