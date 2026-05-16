@@ -80,13 +80,13 @@ export default function CourseManagement() {
     if (!form.semester)          e.semester     = "Required";
     if (!form.difficulty)        e.difficulty   = "Required";
 
-    // Check duplicate name + code
+  // Check duplicate name + code
     const duplicate = courses.find(c =>
       c.id !== editingId &&
       c.name.trim().toLowerCase() === form.name.trim().toLowerCase() &&
       (c.code || '').trim().toLowerCase() === (form.code || '').trim().toLowerCase()
     );
-    if (duplicate) e.name = "A course with the same name and code already exists.";
+   if (duplicate) e.name = "A course with the same name and code already exists.";
 
     return e;
   };

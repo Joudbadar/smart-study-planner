@@ -7,8 +7,7 @@ import { fetchCourses } from './services/CourseService';
 import './Dashboard.css';
 import Chatbot from './Chatbot';
 import React from 'react';
-import { Clock, CheckCircle2, FileText, TrendingUp, MessageCircle } from "lucide-react"
-
+import { Clock, CheckCircle2, FileText, TrendingUp, MessageCircle } from "lucide-react";
 
 const DAYS       = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const DAY_LABELS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
@@ -19,28 +18,23 @@ export default function Dashboard() {
   const [deadlines, setDeadlines]         = useState([]);
   const [allTasks, setAllTasks]           = useState([]);
   const [courses, setCourses]             = useState([]);
-  //const [weekSessions, setWeekSessions]   = useState([]);
   const [allSessions, setAllSessions]     = useState([]);
   const [chatbotOpen, setChatbotOpen]     = useState(false);
   const [loading, setLoading]             = useState(true);
   const [uid, setUid]                     = useState(null);
 
-
-
-
   const loadData = async (userId) => {
-    // 1. Sessions — using fetchAllSessions from SessionService
+    // 1. Sessions
     const sessions = await fetchAllSessions(userId);
     setAllSessions(sessions);
     setTodaySessions(sessions.filter(s => s.day === TODAY));
-   // setWeekSessions(sessions.filter(s => (s.weekOffset ?? 0) === 0));
 
-    // 2. Tasks — using fetchAllTasks from TaskService
+    // 2. Tasks
     const tasks = await fetchAllTasks(userId);
     setAllTasks(tasks);
     const upcoming = tasks
       .filter(t => !t.completed)
-      .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
+      .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
     setDeadlines(upcoming);
 
     // 3. Courses
@@ -49,7 +43,8 @@ export default function Dashboard() {
 
     setLoading(false);
   };
-   useEffect(() => {
+
+  useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         setUid(user.uid);
@@ -61,67 +56,53 @@ export default function Dashboard() {
     return () => unsubscribe();
   }, []);
 
-
   // Stats
   const totalItems     = allTasks.length + allSessions.length;
   const completedItems = allTasks.filter(t => t.completed === true).length +
                          allSessions.filter(s => s.status === 'completed').length;
   const completionRate = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
 
-  // Replace your current studyHours calculation in Dashboard.jsx with this:
+  const studyHours = allSessions
+    .filter((s) => {
+      if (s.status !== 'completed') return false;
+      if (!s.date) return false;
 
-const studyHours = allSessions
-  .filter((s) => {
-    // Only count completed sessions
-    if (s.status !== 'completed') return false;
+      const now = new Date();
+      const sunday = new Date(now);
+      sunday.setDate(now.getDate() - now.getDay());
+      sunday.setHours(0, 0, 0, 0);
 
-    // Must have a valid date
-    if (!s.date) return false;
+      const saturday = new Date(sunday);
+      saturday.setDate(sunday.getDate() + 6);
+      saturday.setHours(23, 59, 59, 999);
 
-    // Get the current week's Sunday and Saturday
-    const now = new Date();
-    const sunday = new Date(now);
-    sunday.setDate(now.getDate() - now.getDay());
-    sunday.setHours(0, 0, 0, 0);
-
-    const saturday = new Date(sunday);
-    saturday.setDate(sunday.getDate() + 6);
-    saturday.setHours(23, 59, 59, 999);
-
-    // Session date
-    const sessionDate = new Date(s.date + 'T00:00:00');
-
-    // Keep only sessions in the current week
-    return sessionDate >= sunday && sessionDate <= saturday;
-  })
-  .reduce((sum, s) => {
-    if (!s.time) return sum;
-
-    const [start, end] = s.time.split(' - ');
-    if (!start || !end) return sum;
-
-    const toMinutes = (time) => {
-      const [h, m] = time.trim().split(':').map(Number);
-      return h * 60 + (m || 0);
-    };
-
-    const duration = (toMinutes(end) - toMinutes(start)) / 60;
-
-    return duration > 0 ? sum + duration : sum;
-  }, 0);
+      const sessionDate = new Date(s.date + 'T00:00:00');
+      return sessionDate >= sunday && sessionDate <= saturday;
+    })
+    .reduce((sum, s) => {
+      if (!s.time) return sum;
+      const [start, end] = s.time.split(' - ');
+      if (!start || !end) return sum;
+      const toMinutes = (time) => {
+        const [h, m] = time.trim().split(':').map(Number);
+        return h * 60 + (m || 0);
+      };
+      const duration = (toMinutes(end) - toMinutes(start)) / 60;
+      return duration > 0 ? sum + duration : sum;
+    }, 0);
 
   const STATS = [
-    { icon: Clock, value: `${studyHours.toFixed(1)}h`, label: 'Study Hours This Week' },
-    { icon: CheckCircle2, value: `${allTasks.filter(t => t.completed === true).length}/${allTasks.length}`, label: 'Completed Tasks' },
-    { icon: FileText, value: deadlines.length, label: 'Upcoming Deadlines' },
-    { icon: TrendingUp, value: `${completionRate}%`, label: 'Completion Rate' },
+    { icon: Clock,        value: `${studyHours.toFixed(1)}h`,                                                    label: 'Study Hours This Week' },
+    { icon: CheckCircle2, value: `${allTasks.filter(t => t.completed === true).length}/${allTasks.length}`,       label: 'Completed Tasks' },
+    { icon: FileText,     value: deadlines.length,                                                                label: 'Upcoming Deadlines' },
+    { icon: TrendingUp,   value: `${completionRate}%`,                                                            label: 'Completion Rate' },
   ];
 
   const getDueBadge = (dueDate) => {
     const diff = Math.ceil((new Date(dueDate) - new Date()) / (1000 * 60 * 60 * 24));
-    if (diff <= 0)  return { label: 'Today!',         urgent: true };
-    if (diff === 1) return { label: 'Tomorrow',        urgent: true };
-    if (diff <= 7)  return { label: `In ${diff} Days`, urgent: false };
+    if (diff <= 0)  return { label: 'Today!',           urgent: true };
+    if (diff === 1) return { label: 'Tomorrow',          urgent: true };
+    if (diff <= 7)  return { label: `In ${diff} Days`,  urgent: false };
     return { label: 'Next Week', urgent: false };
   };
 
@@ -145,9 +126,15 @@ const studyHours = allSessions
 
   // Course Progress
   const courseProgress = courses.map(course => {
-    const label = course.code && course.name ? `${course.code} – ${course.name}` : course.code || course.name;
-    const courseTasks    = allTasks.filter(t => t.course === label || t.course === course.name || t.course === course.code);
-    const courseSessions = allSessions.filter(s => s.course === label || s.course === course.name || s.course === course.code);
+    const label = course.code && course.name
+      ? `${course.code} – ${course.name}`
+      : course.code || course.name;
+    const courseTasks    = allTasks.filter(t =>
+      t.course === label || t.course === course.name || t.course === course.code
+    );
+    const courseSessions = allSessions.filter(s =>
+      s.course === label || s.course === course.name || s.course === course.code
+    );
     const total     = courseTasks.length + courseSessions.length;
     const completed = courseTasks.filter(t => t.completed === true).length +
                       courseSessions.filter(s => s.status === 'completed').length;
@@ -157,7 +144,7 @@ const studyHours = allSessions
   if (loading) return <p style={{ padding: '2rem' }}>Loading dashboard...</p>;
 
   return (
-    <div  className='h-full'>
+    <div className='h-full'>
       <button
         className="chatbot-fab"
         title="AI Assistant"
@@ -168,15 +155,15 @@ const studyHours = allSessions
           justifyContent: 'center',
           width: '52px',
           height: '52px',
-          fontSize: 0,       
-          color: '#fff',      
+          fontSize: 0,
+          color: '#fff',
         }}
       >
         <MessageCircle size={24} />
       </button>
       {chatbotOpen && <Chatbot onClose={() => setChatbotOpen(false)} />}
 
-      <h1 className="page-title " >Welcome! 👋</h1>
+      <h1 className="page-title">Welcome! 👋</h1>
 
       <div className="stats-grid">
         {STATS.map(({ icon: Icon, value, label }) => (
@@ -195,35 +182,28 @@ const studyHours = allSessions
             <p style={{ color: '#aaa', padding: '16px' }}>No sessions scheduled for today.</p>
           ) : (
             todaySessions.map((item) => (
-  <div
-    key={item.id}
-    className={`schedule-item ${
-      item.status === 'completed' ? 'completed' : ''
-    } ${item.status === 'missed' ? 'missed' : ''}`}
-  >
-    <div className="schedule-time">{item.time}</div>
-
-    <div className="schedule-details">
-      <div className="schedule-course">{item.course}</div>
-      <div className="schedule-type">{item.task}</div>
-    </div>
-
-    {/* REMOVE ACTION BUTTONS COMPLETELY */}
-    <div className="schedule-status">
-      {item.status === 'completed' && (
-        <span style={{ color: 'green', fontWeight: 600 }}>Completed</span>
-      )}
-
-      {item.status === 'missed' && (
-        <span style={{ color: 'red', fontWeight: 600 }}>Missed</span>
-      )}
-
-      {!item.status && (
-        <span style={{ color: '#aaa' }}>Scheduled</span>
-      )}
-    </div>
-  </div>
-))
+              <div
+                key={item.id}
+                className={`schedule-item ${item.status === 'completed' ? 'completed' : ''} ${item.status === 'missed' ? 'missed' : ''}`}
+              >
+                <div className="schedule-time">{item.time}</div>
+                <div className="schedule-details">
+                  <div className="schedule-course">{item.course}</div>
+                  <div className="schedule-type">{item.task}</div>
+                </div>
+                <div className="schedule-status">
+                  {item.status === 'completed' && (
+                    <span style={{ color: 'green', fontWeight: 600 }}>Completed</span>
+                  )}
+                  {item.status === 'missed' && (
+                    <span style={{ color: 'red', fontWeight: 600 }}>Missed</span>
+                  )}
+                  {!item.status && (
+                    <span style={{ color: '#aaa' }}>Scheduled</span>
+                  )}
+                </div>
+              </div>
+            ))
           )}
         </div>
 

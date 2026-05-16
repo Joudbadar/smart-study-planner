@@ -36,6 +36,21 @@ export default function CreateAccount() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    
+     if (formData.fullName.trim().length < 3) {
+    setError('Please enter your full name.');
+    return;
+  }
+
+  if (!/^[a-zA-Z\s]+$/.test(formData.fullName.trim())) {
+    setError('Name can only contain letters.');
+    return;
+  }
+
+  if (!isValidEmail(formData.email)) {
+    setError('Invalid email format');
+    return;
+  }
 
     if (!isValidEmail(formData.email)) {
       setError('Invalid email format');
