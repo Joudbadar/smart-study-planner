@@ -3,6 +3,7 @@ import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
 import { fetchAllSessions, addSession, updateSession, deleteSession } from './services/SessionService';
 import { fetchAllTasks } from './services/TaskService';
+
 import './StudySchedule.css';
 
 const DAYS       = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -15,12 +16,10 @@ const TIME_SLOTS = Array.from({ length: 13 }, (_, i) => {
   return { hour, label };
 });
 
-// ── Default availability: all 7 days, no slots marked available ─
 function buildDefaultAvailability() {
   return DAYS.map(day => ({ day, slots: [] }));
 }
 
-// ── Helpers ────────────────────────────────────────────────────
 function getWeekStart(offset = 0) {
   const today  = new Date();
   const sunday = new Date(today);
@@ -88,7 +87,6 @@ function formatTime(timeStr) {
   return min === '00' ? `${h} ${ampm}` : `${h}:${min} ${ampm}`;
 }
 
-// FR4.2: Check if a given day+hour (1-hour block) is inside any available slot
 function hourIsAvailable(availability, dayName, hour) {
   const day = availability.find(d => d.day === dayName);
   if (!day?.slots?.length) return false;
@@ -101,7 +99,6 @@ function hourIsAvailable(availability, dayName, hour) {
   );
 }
 
-// Build busy-time list for a date from a session array
 function buildBusy(sessions, dateStr) {
   return sessions
     .filter(s => s.date === dateStr)
@@ -112,7 +109,6 @@ function buildBusy(sessions, dateStr) {
     .sort((a, b) => a.start - b.start);
 }
 
-// ── FR5.1 / FR5.2 / FR7.2 Core scheduler ──────────────────────
 function scheduleTasks(pendingTasks, availability, existingSessions, weeksAhead = 2) {
   const today  = getTodayStr();
   const nowMin = getNowMin();
@@ -179,7 +175,6 @@ function scheduleTasks(pendingTasks, availability, existingSessions, weeksAhead 
   return planned;
 }
 
-// ── Component ──────────────────────────────────────────────────
 export default function StudySchedule() {
   const [schedule, setSchedule]             = useState([]);
   const [loading, setLoading]               = useState(true);
@@ -192,8 +187,9 @@ export default function StudySchedule() {
   const [showAvailability, setShowAvailability] = useState(false);
   const [availability, setAvailability]     = useState(buildDefaultAvailability());
   const [savingAvail, setSavingAvail]       = useState(false);
-  // Unified confirm modal: action = 'complete' | 'missed' | 'delete'
-  const [modalAction, setModalAction] = useState(null); // { action, session }
+  const [modalAction, setModalAction]       = useState(null);
+
+  const notifiedSessionsRef = useRef(new Set());
 
   const scheduleRef        = useRef([]);
   const availabilityRef    = useRef(buildDefaultAvailability());
@@ -204,6 +200,48 @@ export default function StudySchedule() {
   useEffect(() => { scheduleRef.current = schedule; }, [schedule]);
   useEffect(() => { availabilityRef.current = availability; }, [availability]);
   useEffect(() => { uidRef.current = uid; }, [uid]);
+
+  // طلب إذن الإشعارات من المتصفح
+  useEffect(() => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  }, []);
+
+  // نظام فحص الجلسات وإرسال التنبيهات القادمة
+  useEffect(() => {
+    if (loading || schedule.length === 0) return;
+
+    const checkUpcomingSessions = () => {
+      const today = getTodayStr();
+      const nowMin = getNowMin();
+      
+      const todaysSessions = scheduleRef.current.filter(
+        s => s.date === today && s.status !== 'completed' && s.status !== 'missed'
+      );
+
+      todaysSessions.forEach(session => {
+        const [startTimeStr] = session.time.split(' - ');
+        const sessionStartMin = timeToMin(startTimeStr);
+        const timeDiff = sessionStartMin - nowMin;
+
+        if (timeDiff > 0 && timeDiff <= 10 && !notifiedSessionsRef.current.has(session.id)) {
+          if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification(`⏰ Study Session Reminder!`, {
+              body: `Your session for "${session.task}" (${session.course}) starts in ${timeDiff} minutes!`,
+              icon: '/favicon.ico'
+            });
+            notifiedSessionsRef.current.add(session.id);
+          }
+        }
+      });
+    };
+
+    checkUpcomingSessions();
+    const intervalId = setInterval(checkUpcomingSessions, 60000);
+
+    return () => clearInterval(intervalId);
+  }, [schedule, loading]);
 
   // Auth
   useEffect(() => {
@@ -225,7 +263,7 @@ export default function StudySchedule() {
     return () => { cancelled = true; };
   }, [uid, authResolved]);
 
-  // FR4.1: Load saved availability; merge with default so all 7 days are always present
+  // Load availability
   useEffect(() => {
     if (!uid) return;
     getDoc(doc(db, 'users', uid, 'settings', 'weeklyAvailability')).then(snap => {
@@ -239,13 +277,12 @@ export default function StudySchedule() {
     });
   }, [uid]);
 
-  // FR7.1 / FR7.2: Auto-reschedule missed sessions after initial load
+  // Auto-reschedule missed sessions
   useEffect(() => {
     if (!uid || loading || schedule.length === 0) return;
     doRescheduleMissed(schedule);
-  }, [uid, loading]); // run once after first load
+  }, [uid, loading]);
 
-  // ── Load availability + tasks fresh (no stale closures) ──────
   const loadAvailAndTasks = async () => {
     const currentUid = uidRef.current;
     const snap = await getDoc(doc(db, 'users', currentUid, 'settings', 'weeklyAvailability'));
@@ -273,7 +310,6 @@ export default function StudySchedule() {
     return { avail, tasks };
   };
 
-  // ── FR5.1 / FR5.2: Generate full study plan ───────────────────
   const generateFullPlan = async () => {
     const currentUid = uidRef.current;
     if (!currentUid) return;
@@ -333,7 +369,6 @@ export default function StudySchedule() {
     }
   };
 
-  // ── FR7.1 / FR7.2: Reschedule missed sessions ─────────────────
   const doRescheduleMissed = async (currentSchedule, explicitMissed = null) => {
     const currentUid = uidRef.current;
     if (!currentUid) return;
@@ -376,9 +411,6 @@ export default function StudySchedule() {
       const missedIds = new Set(missed.map(m => m.id));
       const nonMissed = src.filter(s => !missedIds.has(s.id));
 
-      // Block the missed sessions' original slots so the scheduler never
-      // reschedules back into the exact same time — the user already missed it,
-      // so that slot is effectively gone for today.
       const busyForReschedule = [
         ...nonMissed,
         ...missed.map(m => ({ ...m, status: 'blocked' })),
@@ -422,7 +454,6 @@ export default function StudySchedule() {
     }
   };
 
-  // FR7.1 / FR7.2: Mark one session as missed and immediately reschedule it
   const markAsMissed = async (session) => {
     const currentUid = uidRef.current;
     await updateSession(currentUid, session.courseId, session.taskId, session.id, { status: 'missed' });
@@ -432,7 +463,7 @@ export default function StudySchedule() {
     await doRescheduleMissed(updated, [{ ...session, status: 'missed' }]);
   };
 
-  // ── FR4.1: Save availability and regenerate plan ──────────────
+  // تم إصلاح الدالة هنا بإزالة التكرار الزائد لـ doc()
   const saveAvailability = async () => {
     const currentUid = uidRef.current;
     if (!currentUid) return;
@@ -449,7 +480,6 @@ export default function StudySchedule() {
     }
   };
 
-  // FR4.1: Toggle a 1-hour block in the availability grid
   const toggleSlot = (dayName, hour) => {
     setAvailability(prev => {
       const blockStart = minToStr(hour * 60);
@@ -494,7 +524,6 @@ export default function StudySchedule() {
     });
   };
 
-  // ── Confirm modal handlers ────────────────────────────────────
   const openConfirm  = (action, session) => setModalAction({ action, session });
   const closeConfirm = () => setModalAction(null);
 
@@ -519,7 +548,6 @@ export default function StudySchedule() {
     }
   };
 
-  // ── Render ────────────────────────────────────────────────────
   const weekStart    = getWeekStart(weekOffset);
   const weekDates    = getWeekDates(weekStart);
   const weekEnd      = new Date(weekStart); weekEnd.setDate(weekStart.getDate() + 6);
@@ -560,13 +588,11 @@ export default function StudySchedule() {
 
   return (
     <div className="study-schedule-wrapper">
-
       {/* Header */}
       <div className="schedule-header">
         <h1 className="schedule-title">Study Schedule</h1>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
           {rescheduling && <span style={{ fontSize: '13px', color: '#888' }}>⏳ Rescheduling...</span>}
-
 
           <button className="add-session-button" style={{ background: '#f0f0f0', color: '#555' }}
             onClick={() => setShowAvailability(v => !v)}>
@@ -592,7 +618,7 @@ export default function StudySchedule() {
         </div>
       )}
 
-      {/* FR4.1: Availability editor */}
+      {/* Availability editor */}
       {showAvailability && (
         <div className="ss-avail-panel">
           <div className="ss-avail-panel-header">
@@ -688,7 +714,6 @@ export default function StudySchedule() {
       <div className="ss-calendar">
         <div className="ss-calendar-scroll">
           <div className="ss-calendar-inner">
-
             {/* Day headers */}
             <div className="ss-day-headers">
               <div style={{ borderRight: '1px solid #f5ece9' }} />
@@ -771,7 +796,7 @@ export default function StudySchedule() {
         ))}
       </div>
 
-      {/* Confirm Modal — handles complete / missed / delete */}
+      {/* Confirm Modal */}
       {modalAction && (
         <div className="modal-overlay" onClick={closeConfirm}>
           <div className="modal-card" onClick={e => e.stopPropagation()} style={{ maxWidth: '380px', textAlign: 'center' }}>
@@ -802,22 +827,15 @@ export default function StudySchedule() {
                 style={{
                   background: modalAction.action === 'delete'
                     ? 'linear-gradient(135deg, #f44336, #e57373)'
-                    : modalAction.action === 'missed'
-                    ? 'linear-gradient(135deg, #ff9800, #ffb74d)'
-                    : 'linear-gradient(135deg, #4caf50, #81c784)',
+                    : 'linear-gradient(135deg, #4caf50, #66bb6a)'
                 }}
               >
-                {modalAction.action === 'delete'
-                  ? '🗑 Delete'
-                  : modalAction.action === 'missed'
-                  ? '✕ Mark Missed'
-                  : '✓ Confirm'}
+                Confirm
               </button>
             </div>
           </div>
         </div>
       )}
-
     </div>
   );
 }
