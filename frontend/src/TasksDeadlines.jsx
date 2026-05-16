@@ -1,3 +1,4 @@
+// TasksDeadlines.jsx — scoped to authenticated user
 import React from 'react';
 import { useState, useEffect } from 'react';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
@@ -18,20 +19,26 @@ function formatDate(dateStr) {
 
 const EMPTY_FORM = { title: '', courseId: '', course: '', dueDate: '', priority: 'medium' };
 
+const PRIORITIES = ["high", "medium", "low"];
+
+const PRIORITY_STYLES = {
+  high:   { stripe: "#f44336", badgeBg: "#ffebee", badgeText: "#b71c1c" },
+  medium: { stripe: "#ff9800", badgeBg: "#fff3e0", badgeText: "#e65100" },
+  low:    { stripe: "#4caf50", badgeBg: "#e8f5e9", badgeText: "#2e7d32" },
+};
+
 export default function TasksDeadlines() {
   const [deadlines, setDeadlines]       = useState([]);
   const [loading, setLoading]           = useState(true);
   const [filter, setFilter]             = useState('All');
-  const [showForm, setShowForm]         = useState(false);
+  const [modalOpen, setModalOpen]       = useState(false);
+  const [editingId, setEditingId]       = useState(null);
   const [form, setForm]                 = useState(EMPTY_FORM);
-  const [showEditForm, setShowEditForm] = useState(false);
-  const [editingTask, setEditingTask]   = useState(null);
-  const [editForm, setEditForm]         = useState(EMPTY_FORM);
+  const [errors, setErrors]             = useState({});
   const [courses, setCourses]           = useState([]);
   const [loadingCourses, setLoadingCourses] = useState(false);
   const [uid, setUid]                   = useState(null);
 
-  // ── Custom confirm modal ──
   const [confirmOpen, setConfirmOpen]   = useState(false);
   const [confirmTask, setConfirmTask]   = useState(null);
 
@@ -54,7 +61,7 @@ export default function TasksDeadlines() {
   }, [uid]);
 
   useEffect(() => {
-    if ((!showForm && !showEditForm) || !uid) return;
+    if (!modalOpen || !uid) return;
     const loadCourses = async () => {
       setLoadingCourses(true);
       try {
@@ -67,23 +74,88 @@ export default function TasksDeadlines() {
       }
     };
     loadCourses();
-  }, [showForm, showEditForm, uid]);
+  }, [modalOpen, uid]);
 
   const courseLabel = (c) =>
     c.code && c.name ? `${c.code} – ${c.name}` : c.code || c.name || c.id;
+
+  const openAdd = () => { setEditingId(null); setForm(EMPTY_FORM); setErrors({}); setModalOpen(true); };
+
+  const openEdit = (task) => {
+    setEditingId(task.id);
+    setForm({
+      title: task.title || '',
+      courseId: task.courseId || '',
+      course: task.course || '',
+      dueDate: task.dueDate || '',
+      priority: task.priority || 'medium',
+    });
+    setErrors({});
+    setModalOpen(true);
+  };
+
+  const closeModal = () => { setModalOpen(false); setEditingId(null); };
+
+  const handleChange = (field, value) => {
+    setForm(f => ({ ...f, [field]: value }));
+    setErrors(e => ({ ...e, [field]: undefined }));
+  };
 
   const handleCourseChange = (e) => {
     const selectedId = e.target.value;
     const selectedCourse = courses.find(c => c.id === selectedId);
     const label = selectedCourse ? courseLabel(selectedCourse) : '';
     setForm(prev => ({ ...prev, courseId: selectedId, course: label }));
+    setErrors(prev => ({ ...prev, courseId: undefined }));
   };
 
-  const handleEditCourseChange = (e) => {
-    const selectedId = e.target.value;
-    const selectedCourse = courses.find(c => c.id === selectedId);
-    const label = selectedCourse ? courseLabel(selectedCourse) : '';
-    setEditForm(prev => ({ ...prev, courseId: selectedId, course: label }));
+  const validate = () => {
+    const e = {};
+    if (!form.courseId) e.courseId = 'Please select a course.';
+    if (!form.title.trim()) e.title = 'Please enter a task title.';
+    if (!form.dueDate) e.dueDate = 'Please select a due date.';
+    else if (form.dueDate < getTodayStr()) e.dueDate = 'Due date must be today or in the future.';
+    return e;
+  };
+
+  const handleSave = async () => {
+    const e = validate();
+    if (Object.keys(e).length) { setErrors(e); return; }
+
+    if (editingId !== null) {
+      // Edit Mode
+      const updatedData = {
+        title:    form.title,
+        course:   form.course,
+        dueDate:  form.dueDate,
+        priority: form.priority,
+      };
+
+      const original = deadlines.find(t => t.id === editingId);
+      await updateTask(uid, original.courseId, editingId, updatedData);
+
+      if (form.title !== original.title) {
+        try {
+          await propagateTaskEdit(uid, original.courseId, editingId, form.title);
+        } catch (err) {
+          console.error('Failed to propagate task edit:', err);
+        }
+      }
+      setDeadlines(prev => prev.map(t => t.id === editingId ? { ...t, ...updatedData } : t));
+    } else {
+      // Add Mode
+      const newTask = {
+        title: form.title,
+        course: form.course,
+        dueDate: form.dueDate,
+        priority: form.priority,
+        completed: false,
+      };
+      const saved = await addTask(uid, form.courseId, newTask);
+      setDeadlines(prev => [...prev, saved]);
+    }
+
+    closeModal();
   };
 
   const handleComplete = async (id, courseId, currentStatus) => {
@@ -91,7 +163,6 @@ export default function TasksDeadlines() {
     setDeadlines(prev => prev.map(t => t.id === id ? { ...t, completed: !currentStatus } : t));
   };
 
-  // ── Custom delete confirm ──
   const handleDeleteClick = (task) => {
     setConfirmTask(task);
     setConfirmOpen(true);
@@ -109,66 +180,6 @@ export default function TasksDeadlines() {
     setConfirmTask(null);
   };
 
-  const openEdit = (task) => {
-    setEditingTask(task);
-    setEditForm({
-      title: task.title || '',
-      courseId: task.courseId || '',
-      course: task.course || '',
-      dueDate: task.dueDate || '',
-      priority: task.priority || 'medium',
-    });
-    setShowEditForm(true);
-  };
-
-  const handleEditSave = async () => {
-    if (!editForm.courseId) return alert('Please select a course.');
-    if (!editForm.title)    return alert('Please enter a task title.');
-    if (!editForm.dueDate)  return alert('Please select a due date.');
-    if (editForm.dueDate < getTodayStr()) return alert('Due date must be today or in the future.');
-
-    const updatedData = {
-      title:    editForm.title,
-      course:   editForm.course,
-      dueDate:  editForm.dueDate,
-      priority: editForm.priority,
-    };
-
-    await updateTask(uid, editingTask.courseId, editingTask.id, updatedData);
-
-    if (editForm.title !== editingTask.title) {
-      try {
-        await propagateTaskEdit(uid, editingTask.courseId, editingTask.id, editForm.title);
-      } catch (err) {
-        console.error('Failed to propagate task edit:', err);
-      }
-    }
-
-    setDeadlines(prev => prev.map(t => t.id === editingTask.id ? { ...t, ...updatedData } : t));
-    setShowEditForm(false);
-    setEditingTask(null);
-  };
-
-  const handleAdd = async () => {
-    if (!form.courseId) return alert('Please select a course.');
-    if (!form.title)    return alert('Please enter a task title.');
-    if (!form.dueDate)  return alert('Please select a due date.');
-    if (form.dueDate < getTodayStr()) return alert('Due date must be today or in the future.');
-
-    const newTask = {
-      title: form.title,
-      course: form.course,
-      dueDate: form.dueDate,
-      priority: form.priority,
-      completed: false,
-    };
-
-    const saved = await addTask(uid, form.courseId, newTask);
-    setDeadlines(prev => [...prev, saved]);
-    setForm(EMPTY_FORM);
-    setShowForm(false);
-  };
-
   const filtered = deadlines.filter(item => {
     const isDone = item.completed === true;
     if (filter === 'Completed') return isDone;
@@ -177,118 +188,28 @@ export default function TasksDeadlines() {
     return item.priority === filter.toLowerCase();
   });
 
-  if (loading) return <p>Loading tasks...</p>;
+  if (loading) {
+    return (
+      <p style={{ textAlign: "center", color: "#7a7a7a", padding: "40px 0" }}>
+        Loading tasks…
+      </p>
+    );
+  }
 
   return (
-    <div className="tasks-deadlines-wrapper">
+    <div className="w-full">
+      <div className="cm-bg-texture" />
 
-      <div className="tasks-header">
-        <h1 className="tasks-title">Tasks & Deadlines</h1>
-        <button className="add-task-button" onClick={() => setShowForm(true)}>+ Add Task</button>
-      </div>
+      <header className="cm-header">
+        <h1 className="cm-title">Tasks & Deadlines</h1>
+        <p className="cm-subtitle">Track your assignments, projects, and study priorities</p>
+      </header>
 
-      {/* ── Add Modal ── */}
-      {showForm && (
-        <div className="modal-overlay">
-          <div className="modal-card">
-            <h2 className="modal-title">New Task</h2>
-
-            <label className="modal-label">Course <span className="modal-required">*</span></label>
-            <select className="modal-input" value={form.courseId} onChange={handleCourseChange} disabled={loadingCourses}>
-              <option value="">{loadingCourses ? 'Loading courses...' : '— Select a course —'}</option>
-              {courses.map(c => <option key={c.id} value={c.id}>{courseLabel(c)}</option>)}
-            </select>
-
-            <label className="modal-label">Task Title <span className="modal-required">*</span></label>
-            <input className="modal-input" placeholder="e.g. Demo Submission" value={form.title} onChange={e => setForm(prev => ({ ...prev, title: e.target.value }))} />
-
-            <label className="modal-label">Due Date <span className="modal-required">*</span></label>
-            <input className="modal-input" type="date" value={form.dueDate} min={getTodayStr()} onChange={e => setForm(prev => ({ ...prev, dueDate: e.target.value }))} />
-
-            <label className="modal-label">Priority</label>
-            <select className="modal-input" value={form.priority} onChange={e => setForm({ ...form, priority: e.target.value })}>
-              <option value="high">High</option>
-              <option value="medium">Medium</option>
-              <option value="low">Low</option>
-            </select>
-
-            <div className="modal-actions">
-              <button className="modal-cancel" onClick={() => { setShowForm(false); setForm(EMPTY_FORM); }}>Cancel</button>
-              <button className="modal-save" onClick={handleAdd}>Add</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Edit Modal ── */}
-      {showEditForm && (
-        <div className="modal-overlay">
-          <div className="modal-card">
-            <h2 className="modal-title">Edit Task</h2>
-
-            <label className="modal-label">Course <span className="modal-required">*</span></label>
-            <select className="modal-input" value={editForm.courseId} onChange={handleEditCourseChange} disabled={loadingCourses}>
-              <option value="">{loadingCourses ? 'Loading courses...' : '— Select a course —'}</option>
-              {courses.map(c => <option key={c.id} value={c.id}>{courseLabel(c)}</option>)}
-            </select>
-
-            <label className="modal-label">Task Title <span className="modal-required">*</span></label>
-            <input className="modal-input" placeholder="e.g. Demo Submission" value={editForm.title} onChange={e => setEditForm(prev => ({ ...prev, title: e.target.value }))} />
-
-            <label className="modal-label">Due Date <span className="modal-required">*</span></label>
-            <input className="modal-input" type="date" value={editForm.dueDate} min={getTodayStr()} onChange={e => setEditForm(prev => ({ ...prev, dueDate: e.target.value }))} />
-
-            <label className="modal-label">Priority</label>
-            <select className="modal-input" value={editForm.priority} onChange={e => setEditForm({ ...editForm, priority: e.target.value })}>
-              <option value="high">High</option>
-              <option value="medium">Medium</option>
-              <option value="low">Low</option>
-            </select>
-
-            <div className="modal-actions">
-              <button className="modal-cancel" onClick={() => { setShowEditForm(false); setEditingTask(null); }}>Cancel</button>
-              <button className="modal-save" onClick={handleEditSave}>Save Changes</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Custom Delete Confirm Modal ── */}
-      {confirmOpen && (
-        <div className="modal-overlay" onClick={handleCancelDelete}>
-          <div className="modal-card" onClick={e => e.stopPropagation()} style={{ maxWidth: '380px', textAlign: 'center' }}>
-            <div style={{ fontSize: '48px', marginBottom: '12px' }}>🗑</div>
-            <h2 className="modal-title">Delete Task?</h2>
-            <p style={{ color: '#777', fontSize: '14px', margin: '8px 0 24px' }}>
-              This will permanently delete <strong>"{confirmTask?.title}"</strong> and all its sessions. This action cannot be undone.
-            </p>
-            <div className="modal-actions">
-              <button className="modal-cancel" onClick={handleCancelDelete}>Cancel</button>
-              <button
-                className="modal-save"
-                onClick={handleConfirmDelete}
-                style={{ background: 'linear-gradient(135deg, #f44336, #e57373)' }}
-              >
-                🗑 Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div className="statistics-cards-container">
-        <div className="statistic-card-item">
-          <div className="statistic-number">{deadlines.length}</div>
-          <div className="statistic-label-text">Total Tasks</div>
-        </div>
-        <div className="statistic-card-item">
-          <div className="statistic-number">{deadlines.filter(d => d.priority === 'high').length}</div>
-          <div className="statistic-label-text">High Priority</div>
-        </div>
-        <div className="statistic-card-item">
-          <div className="statistic-number">{deadlines.filter(d => d.completed).length}</div>
-          <div className="statistic-label-text">Completed</div>
-        </div>
+      <div className="cm-summary">
+        <div className="cm-chip">Total Tasks <span>{deadlines.length}</span></div>
+        <div className="cm-chip">High Priority <span>{deadlines.filter(d => d.priority === 'high').length}</span></div>
+        <div className="cm-chip">Completed <span>{deadlines.filter(d => d.completed).length}</span></div>
+        <button className="cm-add-btn" onClick={openAdd}>＋ Add Task</button>
       </div>
 
       <div className="filter-buttons-container">
@@ -303,31 +224,160 @@ export default function TasksDeadlines() {
         ))}
       </div>
 
-      <div className="deadlines-list-container">
-        {filtered.length === 0 && (
-          <p style={{ color: '#aaa', textAlign: 'center', marginTop: '40px' }}>
-            No tasks yet. Click "+ Add Task" to get started.
-          </p>
-        )}
-        {filtered.map(item => (
-          <div key={item.id} className={`deadline-task-card ${item.priority} ${item.completed ? 'task-completed' : ''}`}>
-            <div className={`priority-badge ${item.completed ? 'completed' : item.priority}`}>
-              {item.completed ? 'done' : item.priority}
+      {!uid && (
+        <p style={{ textAlign: "center", color: "#7a7a7a", padding: "40px 0" }}>
+          Please log in to view your tasks.
+        </p>
+      )}
+
+      {uid && (
+        <div className="cm-courses-grid">
+          {filtered.length === 0 && (
+            <div className="cm-empty">
+              <p className="cm-empty-icon">📝</p>
+              <h3>No tasks found</h3>
+              <p>There are no tasks matching your selection</p>
             </div>
-            <div className="task-info-section">
-              <div className="task-title">{item.title}</div>
-              <div className="task-course-name">{item.course}</div>
-              <div className="task-due-date">📅 Due: {formatDate(item.dueDate)}</div>
-            </div>
-            <div className="task-action-buttons">
-              <button className="complete-task-button" onClick={() => handleComplete(item.id, item.courseId, item.completed)}>✓</button>
-              <button className="edit-task-button" onClick={() => openEdit(item)}>✎</button>
-              <button className="delete-task-button" onClick={() => handleDeleteClick(item)}>🗑</button>
+          )}
+
+          {filtered.map((item) => {
+            const ps = PRIORITY_STYLES[item.priority] || PRIORITY_STYLES["medium"];
+            return (
+              <div 
+                key={item.id} 
+                className={`cm-course-card ${item.completed ? 'task-completed' : ''}`} 
+                style={{ "--stripe-color": item.completed ? "#4caf50" : ps.stripe }}
+              >
+                <div className="cm-card-top">
+                  <div className="cm-card-title-group">
+                    <h3 className="cm-course-name" style={{ textDecoration: item.completed ? 'line-through' : 'none' }}>
+                      {item.title}
+                    </h3>
+                    {item.course && <span className="cm-course-code">{item.course}</span>}
+                  </div>
+                  <span 
+                    className="cm-diff-badge" 
+                    style={{ 
+                      background: item.completed ? "#e8f5e9" : ps.badgeBg, 
+                      color: item.completed ? "#2e7d32" : ps.badgeText 
+                    }}
+                  >
+                    {item.completed ? 'Done' : item.priority}
+                  </span>
+                </div>
+
+                <div className="cm-course-meta">
+                  <div className="cm-meta-item cm-meta-full">
+                    <div className="cm-meta-label">Due Date</div>
+                    <div className="cm-meta-value" style={{ color: item.completed ? '#bbb' : '#2d2d2d' }}>
+                      📅 {formatDate(item.dueDate)}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="cm-card-actions">
+                  <button 
+                    className="cm-btn-edit" 
+                    style={{ background: '#e8f5e9', color: '#4caf50' }} 
+                    onClick={() => handleComplete(item.id, item.courseId, item.completed)}
+                  >
+                    {item.completed ? '↩ Undo' : '✓ Done'}
+                  </button>
+                  <button 
+                    className="cm-btn-edit" 
+                    style={{ background: '#fff3e0', color: '#ff9800', borderRight: '1px solid #fde0d6' }} 
+                    onClick={() => openEdit(item)}
+                  >
+                    ✏ Edit
+                  </button>
+                  <button className="cm-btn-remove" onClick={() => handleDeleteClick(item)}>
+                    🗑 Remove
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ── Custom Confirm Modal ── */}
+      {confirmOpen && (
+        <div className="cm-overlay" onClick={handleCancelDelete}>
+          <div className="cm-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '380px', textAlign: 'center' }}>
+            <div style={{ fontSize: '48px', marginBottom: '12px' }}>🗑</div>
+            <h2 className="cm-modal-title">Delete Task?</h2>
+            <p style={{ color: '#777', fontSize: '14px', margin: '8px 0 24px' }}>
+              This will permanently delete <strong>"{confirmTask?.title}"</strong> and all its sessions. This action cannot be undone.
+            </p>
+            <div className="cm-modal-actions">
+              <button className="cm-btn-cancel" onClick={handleCancelDelete}>Cancel</button>
+              <button className="cm-btn-primary" onClick={handleConfirmDelete} style={{ background: 'linear-gradient(135deg, #f44336, #e57373)' }}>
+                🗑 Delete
+              </button>
             </div>
           </div>
-        ))}
-      </div>
+        </div>
+      )}
 
+      {/* ── Add / Edit Modal (Unified) ── */}
+      {modalOpen && (
+        <div className="cm-overlay" onClick={(e) => e.target === e.currentTarget && closeModal()}>
+          <div className="cm-modal">
+            <h2 className="cm-modal-title">{editingId ? "Edit Task" : "Add Task"}</h2>
+
+            <div className="cm-form-group">
+              <label className="cm-label">Course <span className="cm-req">*</span></label>
+              <select 
+                className={`cm-select ${errors.courseId ? "cm-err" : ""}`} 
+                value={form.courseId} 
+                onChange={handleCourseChange} 
+                disabled={loadingCourses}
+              >
+                <option value="">{loadingCourses ? 'Loading courses...' : '— select —'}</option>
+                {courses.map(c => <option key={c.id} value={c.id}>{courseLabel(c)}</option>)}
+              </select>
+              {errors.courseId && <span className="cm-error-msg">{errors.courseId}</span>}
+            </div>
+
+            <div className="cm-form-group">
+              <label className="cm-label">Task Title <span className="cm-req">*</span></label>
+              <input 
+                className={`cm-input ${errors.title ? "cm-err" : ""}`} 
+                placeholder="e.g., Demo Submission" 
+                value={form.title} 
+                onChange={e => handleChange("title", e.target.value)} 
+              />
+              {errors.title && <span className="cm-error-msg">{errors.title}</span>}
+            </div>
+
+            <div className="cm-form-row">
+              <div className="cm-form-group">
+                <label className="cm-label">Due Date <span className="cm-req">*</span></label>
+                <input 
+                  type="date"
+                  className={`cm-input ${errors.dueDate ? "cm-err" : ""}`} 
+                  value={form.dueDate} 
+                  min={getTodayStr()} 
+                  onChange={e => handleChange("dueDate", e.target.value)} 
+                />
+                {errors.dueDate && <span className="cm-error-msg">{errors.dueDate}</span>}
+              </div>
+
+              <div className="cm-form-group">
+                <label className="cm-label">Priority <span className="cm-req">*</span></label>
+                <select className="cm-select" value={form.priority} onChange={e => handleChange("priority", e.target.value)}>
+                  {PRIORITIES.map(p => <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>)}
+                </select>
+              </div>
+            </div>
+
+            <div className="cm-modal-actions">
+              <button className="cm-btn-cancel"  onClick={closeModal}>Cancel</button>
+              <button className="cm-btn-primary" onClick={handleSave}>{editingId ? "Update Task" : "✓ Save Task"}</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
