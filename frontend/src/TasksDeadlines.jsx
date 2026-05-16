@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, collection, getDocs } from 'firebase/firestore';
 import { fetchAllTasks, addTask, updateTask, deleteTask, propagateTaskEdit } from './services/TaskService';
-import './TasksDeadlines.css';
+
 
 function getTodayStr() {
   const t = new Date();
@@ -537,20 +537,22 @@ export default function TasksDeadlines() {
           border-right: none;
         }
 
-        /* Done — green */
+        /* Done — left container, green */
         .cm-btn-done {
           background: #e8f5e9;
           color: #2e7d32;
+          border-right: 1px solid #f0e8e5;
         }
         .cm-btn-done:hover {
           background: #4caf50;
           color: #fff;
         }
 
-        /* Edit — amber */
+        /* Edit — middle container, amber */
         .cm-btn-edit {
           background: #fff8ee;
           color: #e65100;
+          border-right: 1px solid #f0e8e5;
         }
         .cm-btn-edit:hover {
           background: #ff9800;

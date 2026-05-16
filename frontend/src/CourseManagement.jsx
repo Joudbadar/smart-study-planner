@@ -290,7 +290,10 @@ export default function CourseManagement() {
               </div>
               <div className="cm-form-group">
                 <label className="cm-label">Hours / Week <span className="cm-req">*</span></label>
-                <input type="number" min="1" max="6" className={`cm-input ${errors.hoursPerWeek ? "cm-err" : ""}`} placeholder="e.g., 4" value={form.hoursPerWeek} onChange={e => handleChange("hoursPerWeek", e.target.value)} />
+                <select className={`cm-select ${errors.hoursPerWeek ? "cm-err" : ""}`} value={form.hoursPerWeek} onChange={e => handleChange("hoursPerWeek", e.target.value)}>
+                  <option value="">— select —</option>
+                  {[1,2,3,4,5,6].map(h => <option key={h} value={h}>{h}</option>)}
+                </select>
                 {errors.hoursPerWeek && <span className="cm-error-msg">{errors.hoursPerWeek}</span>}
               </div>
             </div>
