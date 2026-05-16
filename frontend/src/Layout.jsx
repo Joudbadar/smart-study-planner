@@ -7,7 +7,6 @@ import {
   LayoutDashboard,
   BookOpen,
   CheckSquare,
-  Clock,
   CalendarDays,
   BarChart3,
   GraduationCap,
@@ -20,7 +19,6 @@ const NAV_ITEMS = [
   { icon: LayoutDashboard, label: 'Dashboard',           path: '/dashboard' },
   { icon: BookOpen,        label: 'My Courses',          path: '/courses' },
   { icon: CheckSquare,     label: 'Tasks & Deadlines',   path: '/tasks' },
-  { icon: Clock,           label: 'Weekly Availability', path: '/availability' },
   { icon: CalendarDays,    label: 'Study Schedule',      path: '/schedule' },
   { icon: BarChart3,       label: 'Progress & Analytics',path: '/track' },
 ];

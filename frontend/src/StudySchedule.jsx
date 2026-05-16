@@ -80,10 +80,13 @@ function getWeekOffset(dateStr) {
 }
 
 function formatTime(timeStr) {
-  const hour = parseInt(timeStr.split(':')[0]);
+  if (!timeStr) return '';
+  const [hourStr, minStr] = timeStr.split(':');
+  const hour = parseInt(hourStr);
+  const min  = minStr || '00';
   const ampm = hour >= 12 ? 'PM' : 'AM';
   const h    = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
-  return `${h}:00 ${ampm}`;
+  return min === '00' ? `${h} ${ampm}` : `${h}:${min} ${ampm}`;
 }
 
 // FR4.2: Check if a given day+hour (1-hour block) is inside any available slot
@@ -111,16 +114,12 @@ function buildBusy(sessions, dateStr) {
 }
 
 // ── FR5.1 / FR5.2 / FR7.2 Core scheduler ──────────────────────
-// Schedules ALL tasks, placing as many 1-hour sessions as needed
-// (up to a per-task cap) to cover each task's estimated study time.
-// Sessions are only placed inside defined availability windows (FR4.2).
 function scheduleTasks(pendingTasks, availability, existingSessions, weeksAhead = 2) {
   const today  = getTodayStr();
   const nowMin = getNowMin();
   const planned = [];
 
   for (const task of pendingTasks) {
-    // FR5.2: determine how many 1-hr sessions this task needs
     const hoursNeeded = task.estimatedHours
       ? Math.max(1, Math.round(task.estimatedHours))
       : 1;
@@ -128,13 +127,11 @@ function scheduleTasks(pendingTasks, availability, existingSessions, weeksAhead 
 
     outer:
     for (let wk = 0; wk < weeksAhead; wk++) {
-      // FR5.2: order by day so earlier days are preferred
       const daysOrdered = [...availability].filter(d => d.slots?.some(s => s.available));
 
       for (const availDay of daysOrdered) {
         const dateStr = getDateForDayInWeek(availDay.day, wk);
 
-        // FR4.2: never schedule outside defined availability or past due date
         if (dateStr < today) continue;
         if (task.dueDate && dateStr > task.dueDate) continue;
 
@@ -156,7 +153,6 @@ function scheduleTasks(pendingTasks, availability, existingSessions, weeksAhead 
             if (cursor < nextHour) cursor = nextHour;
           }
 
-          // Fill as many 1-hour blocks as possible from this slot
           while (cursor + 60 <= slotEnd && placed < hoursNeeded) {
             const end      = cursor + 60;
             const conflict = busy.find(b => !(end <= b.start || cursor >= b.end));
@@ -169,7 +165,6 @@ function scheduleTasks(pendingTasks, availability, existingSessions, weeksAhead 
               startStr: minToStr(cursor),
               endStr:   minToStr(end),
             });
-            // Treat newly placed block as busy for next iteration
             busy.push({ start: cursor, end });
             busy.sort((a, b) => a.start - b.start);
             cursor = end;
@@ -195,26 +190,21 @@ export default function StudySchedule() {
   const [generating, setGenerating]         = useState(false);
   const [generateMsg, setGenerateMsg]       = useState('');
   const [rescheduling, setRescheduling]     = useState(false);
-  const [autoReschedule, setAutoReschedule] = useState(true);
   const [showAvailability, setShowAvailability] = useState(false);
-  // FR4.1: initialise with all 7 days so every day is always editable
   const [availability, setAvailability]     = useState(buildDefaultAvailability());
   const [savingAvail, setSavingAvail]       = useState(false);
-  const [confirmOpen, setConfirmOpen]       = useState(false);
-  const [confirmSession, setConfirmSession] = useState(null);
+  // Unified confirm modal: action = 'complete' | 'missed' | 'delete'
+  const [modalAction, setModalAction] = useState(null); // { action, session }
 
-  // Use refs so async functions always see latest values without stale closures
   const scheduleRef        = useRef([]);
   const availabilityRef    = useRef(buildDefaultAvailability());
   const uidRef             = useRef(null);
-  const autoRescheduleRef  = useRef(true);
 
   const db = getFirestore();
 
   useEffect(() => { scheduleRef.current = schedule; }, [schedule]);
   useEffect(() => { availabilityRef.current = availability; }, [availability]);
   useEffect(() => { uidRef.current = uid; }, [uid]);
-  useEffect(() => { autoRescheduleRef.current = autoReschedule; }, [autoReschedule]);
 
   // Auth
   useEffect(() => {
@@ -242,22 +232,18 @@ export default function StudySchedule() {
     getDoc(doc(db, 'users', uid, 'settings', 'weeklyAvailability')).then(snap => {
       if (snap.exists()) {
         const saved = snap.data().availability || [];
-        // Ensure every day exists (merge saved slots into the full-day scaffold)
         setAvailability(buildDefaultAvailability().map(defaultDay => {
           const found = saved.find(s => s.day === defaultDay.day);
           return found ? { ...defaultDay, slots: found.slots || [] } : defaultDay;
         }));
       }
-      // If no saved doc, keep the default (all days, no slots) — user can define from scratch
     });
   }, [uid]);
 
   // FR7.1 / FR7.2: Auto-reschedule missed sessions after initial load
   useEffect(() => {
     if (!uid || loading || schedule.length === 0) return;
-    if (autoRescheduleRef.current) {
-      doRescheduleMissed(schedule);
-    }
+    doRescheduleMissed(schedule);
   }, [uid, loading]); // run once after first load
 
   // ── Load availability + tasks fresh (no stale closures) ──────
@@ -265,7 +251,6 @@ export default function StudySchedule() {
     const currentUid = uidRef.current;
     const snap = await getDoc(doc(db, 'users', currentUid, 'settings', 'weeklyAvailability'));
 
-    // FR4.1: build base scaffold so all 7 days are available to the scheduler
     const base = buildDefaultAvailability();
     const avail = snap.exists()
       ? base.map(d => {
@@ -275,13 +260,11 @@ export default function StudySchedule() {
       : base;
 
     const allTasks = await fetchAllTasks(currentUid);
-    // FR5.2: include all incomplete tasks (with or without a due date)
     const tasks = allTasks
       .filter(t => !t.completed)
       .sort((a, b) => {
         const pd = (PRIORITY_ORDER[a.priority] ?? 1) - (PRIORITY_ORDER[b.priority] ?? 1);
         if (pd !== 0) return pd;
-        // tasks without a due date go last
         if (!a.dueDate && !b.dueDate) return 0;
         if (!a.dueDate) return 1;
         if (!b.dueDate) return -1;
@@ -300,7 +283,6 @@ export default function StudySchedule() {
 
     try {
       const { avail, tasks } = await loadAvailAndTasks();
-      // FR4.2: only use days that have at least one available slot
       const availDays = avail.filter(d => d.slots?.some(s => s.available));
 
       if (availDays.length === 0) {
@@ -312,17 +294,14 @@ export default function StudySchedule() {
         return;
       }
 
-      // Delete existing pending/rescheduled sessions so we start fresh
       const toDelete = scheduleRef.current.filter(s => s.status === 'pending' || s.status === 'rescheduled');
       for (const s of toDelete) {
         await deleteSession(currentUid, s.courseId, s.taskId, s.id);
       }
-      // Keep only completed and missed sessions (they occupy real time slots)
       const kept = scheduleRef.current.filter(s => s.status === 'completed' || s.status === 'missed');
       setSchedule(kept);
       scheduleRef.current = kept;
 
-      // FR5.2: Schedule fresh — respect existing busy slots, deadline, priority, course load
       const planned = scheduleTasks(tasks, availDays, kept, 2);
 
       if (planned.length === 0) {
@@ -356,7 +335,7 @@ export default function StudySchedule() {
   };
 
   // ── FR7.1 / FR7.2: Reschedule missed sessions ─────────────────
-  const doRescheduleMissed = async (currentSchedule) => {
+  const doRescheduleMissed = async (currentSchedule, explicitMissed = null) => {
     const currentUid = uidRef.current;
     if (!currentUid) return;
     setRescheduling(true);
@@ -366,8 +345,7 @@ export default function StudySchedule() {
       const nowMin  = getNowMin();
       const src     = currentSchedule ?? scheduleRef.current;
 
-      // FR7.1: detect all sessions that were missed (past due, not completed)
-      const missed = src.filter(s => {
+      const missed = explicitMissed ?? src.filter(s => {
         if (s.status === 'completed' || s.status === 'missed') return false;
         if (s.date < today) return true;
         if (s.date === today) {
@@ -379,7 +357,6 @@ export default function StudySchedule() {
 
       if (missed.length === 0) return;
 
-      // Load fresh availability (FR4.2 compliance for rescheduled sessions)
       const snap = await getDoc(doc(db, 'users', currentUid, 'settings', 'weeklyAvailability'));
       const base  = buildDefaultAvailability();
       const avail = snap.exists()
@@ -391,24 +368,33 @@ export default function StudySchedule() {
       const availDays = avail.filter(d => d.slots?.some(s => s.available));
       if (availDays.length === 0) return;
 
-      // FR7.1: mark all detected missed sessions in Firestore
-      const nonMissed = src.filter(s => !missed.find(m => m.id === s.id));
       for (const m of missed) {
-        await updateSession(currentUid, m.courseId, m.taskId, m.id, { status: 'missed' });
+        if (m.status !== 'missed') {
+          await updateSession(currentUid, m.courseId, m.taskId, m.id, { status: 'missed' });
+        }
       }
 
-      // FR7.2: build task objects from missed sessions and reschedule them
+      const missedIds = new Set(missed.map(m => m.id));
+      const nonMissed = src.filter(s => !missedIds.has(s.id));
+
+      // Block the missed sessions' original slots so the scheduler never
+      // reschedules back into the exact same time — the user already missed it,
+      // so that slot is effectively gone for today.
+      const busyForReschedule = [
+        ...nonMissed,
+        ...missed.map(m => ({ ...m, status: 'blocked' })),
+      ];
+
       const missedAsTasks = missed.map(m => ({
         id: m.taskId, courseId: m.courseId,
         title: m.task, course: m.course,
         priority: m.priority || 'medium',
         estimatedHours: m.estimatedHours || 1,
-        dueDate: null, // no due-date constraint — keep student on track regardless
+        dueDate: null,
         completed: false,
       }));
 
-      // FR7.2: schedule into future available slots only (FR4.2)
-      const planned = scheduleTasks(missedAsTasks, availDays, nonMissed, 3);
+      const planned = scheduleTasks(missedAsTasks, availDays, busyForReschedule, 4);
 
       const rescheduled = [];
       for (const { task, date, day, startStr, endStr } of planned) {
@@ -422,10 +408,9 @@ export default function StudySchedule() {
         rescheduled.push(s);
       }
 
-      // FR7.2: update local state — missed marked, new sessions appended
       setSchedule(() => {
         const updated = [
-          ...src.map(s => missed.find(m => m.id === s.id) ? { ...s, status: 'missed' } : s),
+          ...src.map(s => missedIds.has(s.id) ? { ...s, status: 'missed' } : s),
           ...rescheduled,
         ];
         scheduleRef.current = updated;
@@ -438,15 +423,14 @@ export default function StudySchedule() {
     }
   };
 
-  // FR7.1 / FR7.2: Mark one session as missed and reschedule if auto-reschedule is on
+  // FR7.1 / FR7.2: Mark one session as missed and immediately reschedule it
   const markAsMissed = async (session) => {
     const currentUid = uidRef.current;
     await updateSession(currentUid, session.courseId, session.taskId, session.id, { status: 'missed' });
     const updated = scheduleRef.current.map(s => s.id === session.id ? { ...s, status: 'missed' } : s);
     setSchedule(updated);
     scheduleRef.current = updated;
-    // FR7.2: always reschedule immediately when manually marking missed
-    await doRescheduleMissed(updated);
+    await doRescheduleMissed(updated, [{ ...session, status: 'missed' }]);
   };
 
   // ── FR4.1: Save availability and regenerate plan ──────────────
@@ -460,7 +444,6 @@ export default function StudySchedule() {
       });
       availabilityRef.current = availability;
       setShowAvailability(false);
-      // FR5.1 / FR5.2: regenerate plan with updated availability
       await generateFullPlan();
     } finally {
       setSavingAvail(false);
@@ -468,7 +451,6 @@ export default function StudySchedule() {
   };
 
   // FR4.1: Toggle a 1-hour block in the availability grid
-  // Works for ALL days, including days that had no prior slots
   const toggleSlot = (dayName, hour) => {
     setAvailability(prev => {
       const blockStart = minToStr(hour * 60);
@@ -477,14 +459,12 @@ export default function StudySchedule() {
       return prev.map(d => {
         if (d.day !== dayName) return d;
 
-        // Check if this exact 1-hour block already exists as a slot
         const slotIdx = d.slots.findIndex(s =>
           timeToMin(s.startTime) === hour * 60 &&
           timeToMin(s.endTime)   === (hour + 1) * 60
         );
 
         if (slotIdx !== -1) {
-          // Toggle existing slot's available flag
           return {
             ...d,
             slots: d.slots.map((s, si) =>
@@ -493,14 +473,12 @@ export default function StudySchedule() {
           };
         }
 
-        // Check if this hour falls inside an existing larger slot
         const containerIdx = d.slots.findIndex(s =>
           timeToMin(s.startTime) <= hour * 60 &&
           (hour + 1) * 60 <= timeToMin(s.endTime)
         );
 
         if (containerIdx !== -1) {
-          // Toggle the whole containing slot
           return {
             ...d,
             slots: d.slots.map((s, si) =>
@@ -509,7 +487,6 @@ export default function StudySchedule() {
           };
         }
 
-        // No existing slot — create a new 1-hour available slot for this day
         return {
           ...d,
           slots: [...d.slots, { startTime: blockStart, endTime: blockEnd, available: true }],
@@ -518,20 +495,29 @@ export default function StudySchedule() {
     });
   };
 
-  // ── Complete / delete ─────────────────────────────────────────
-  const handleComplete = async (id, courseId, taskId, currentStatus) => {
-    const newStatus = currentStatus === 'completed' ? 'pending' : 'completed';
-    await updateSession(uidRef.current, courseId, taskId, id, { status: newStatus });
-    setSchedule(prev => prev.map(s => s.id === id ? { ...s, status: newStatus } : s));
-  };
+  // ── Confirm modal handlers ────────────────────────────────────
+  const openConfirm  = (action, session) => setModalAction({ action, session });
+  const closeConfirm = () => setModalAction(null);
 
-  const handleDeleteClick   = (session) => { setConfirmSession(session); setConfirmOpen(true); };
-  const handleCancelDelete  = () => { setConfirmOpen(false); setConfirmSession(null); };
-  const handleConfirmDelete = async () => {
-    setConfirmOpen(false);
-    await deleteSession(uidRef.current, confirmSession.courseId, confirmSession.taskId, confirmSession.id);
-    setSchedule(prev => prev.filter(s => s.id !== confirmSession.id));
-    setConfirmSession(null);
+  const handleConfirmAction = async () => {
+    if (!modalAction) return;
+    const { action, session } = modalAction;
+    closeConfirm();
+
+    if (action === 'complete') {
+      const newStatus = session.status === 'completed' ? 'pending' : 'completed';
+      await updateSession(uidRef.current, session.courseId, session.taskId, session.id, { status: newStatus });
+      setSchedule(prev => prev.map(s => s.id === session.id ? { ...s, status: newStatus } : s));
+    }
+
+    if (action === 'missed') {
+      await markAsMissed(session);
+    }
+
+    if (action === 'delete') {
+      await deleteSession(uidRef.current, session.courseId, session.taskId, session.id);
+      setSchedule(prev => prev.filter(s => s.id !== session.id));
+    }
   };
 
   // ── Render ────────────────────────────────────────────────────
@@ -582,24 +568,15 @@ export default function StudySchedule() {
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
           {rescheduling && <span style={{ fontSize: '13px', color: '#888' }}>⏳ Rescheduling...</span>}
 
-          {/* FR7.1 / FR7.2: Auto-reschedule toggle */}
-          <label className="ss-toggle-wrapper" onClick={() => setAutoReschedule(v => !v)}>
-            <div className="ss-toggle-track" style={{ background: autoReschedule ? 'linear-gradient(135deg, #e67a5f, #ee9b85)' : '#ddd' }}>
-              <div className="ss-toggle-thumb" style={{ left: autoReschedule ? '18px' : '3px' }} />
-            </div>
-            Auto-reschedule
-          </label>
 
-          {/* FR4.1: Edit availability */}
           <button className="add-session-button" style={{ background: '#f0f0f0', color: '#555' }}
             onClick={() => setShowAvailability(v => !v)}>
-            🕐 {showAvailability ? 'Hide' : 'Edit'} Availability
+             {showAvailability ? 'Hide' : 'Edit'} Availability
           </button>
 
-          {/* FR5.1: Generate plan */}
           <button className="add-session-button" onClick={() => generateFullPlan()} disabled={generating}
             style={{ background: 'linear-gradient(135deg, #e67a5f, #ee9b85)', opacity: generating ? 0.7 : 1 }}>
-            {generating ? '⏳ Generating...' : '✨ Generate Plan'}
+            {generating ? ' Generating...' : ' Generate Plan'}
           </button>
         </div>
       </div>
@@ -616,7 +593,7 @@ export default function StudySchedule() {
         </div>
       )}
 
-      {/* FR4.1: Availability editor — all 7 days always shown */}
+      {/* FR4.1: Availability editor */}
       {showAvailability && (
         <div className="ss-avail-panel">
           <div className="ss-avail-panel-header">
@@ -632,7 +609,6 @@ export default function StudySchedule() {
             </button>
           </div>
 
-          {/* FR4.1: Grid always shows all 7 days × 13 time slots */}
           <div className="ss-avail-grid">
             <div />
             {DAYS_SHORT.map(d => (
@@ -760,16 +736,16 @@ export default function StudySchedule() {
                               {!isDone && !isMiss && (
                                 <div className="ss-action-btns">
                                   <button className="ss-action-btn ss-btn-complete" title="Mark complete"
-                                    onClick={() => handleComplete(session.id, session.courseId, session.taskId, session.status)}>✓</button>
+                                    onClick={() => openConfirm('complete', session)}>✓</button>
                                   <button className="ss-action-btn ss-btn-missed" title="Mark as missed"
-                                    onClick={() => markAsMissed(session)}>✕</button>
+                                    onClick={() => openConfirm('missed', session)}>✕</button>
                                   <button className="ss-action-btn ss-btn-delete" title="Delete"
-                                    onClick={() => handleDeleteClick(session)}>🗑</button>
+                                    onClick={() => openConfirm('delete', session)}>🗑</button>
                                 </div>
                               )}
                               {isDone && (
                                 <button className="ss-undo-btn"
-                                  onClick={() => handleComplete(session.id, session.courseId, session.taskId, session.status)}>
+                                  onClick={() => openConfirm('complete', session)}>
                                   Undo
                                 </button>
                               )}
@@ -796,19 +772,47 @@ export default function StudySchedule() {
         ))}
       </div>
 
-      {/* Delete Confirm Modal */}
-      {confirmOpen && (
-        <div className="modal-overlay" onClick={handleCancelDelete}>
+      {/* Confirm Modal — handles complete / missed / delete */}
+      {modalAction && (
+        <div className="modal-overlay" onClick={closeConfirm}>
           <div className="modal-card" onClick={e => e.stopPropagation()} style={{ maxWidth: '380px', textAlign: 'center' }}>
-            <div style={{ fontSize: '48px', marginBottom: '12px' }}>🗑</div>
-            <h2 className="modal-title">Delete Session?</h2>
+            <div style={{ fontSize: '48px', marginBottom: '12px' }}>
+              {modalAction.action === 'delete' ? '🗑' : modalAction.action === 'missed' ? '✕' : '✓'}
+            </div>
+            <h2 className="modal-title">
+              {modalAction.action === 'delete'
+                ? 'Delete Session?'
+                : modalAction.action === 'missed'
+                ? 'Mark as Missed?'
+                : modalAction.session?.status === 'completed'
+                ? 'Undo Completion?'
+                : 'Mark as Complete?'}
+            </h2>
             <p style={{ color: '#777', fontSize: '14px', margin: '8px 0 24px' }}>
-              This will permanently delete this study session. This action cannot be undone.
+              {modalAction.action === 'delete'
+                ? 'This will permanently delete this study session. This action cannot be undone.'
+                : modalAction.action === 'missed'
+                ? 'This session will be marked as missed and rescheduled automatically.'
+                : 'Update the completion status of this study session.'}
             </p>
             <div className="modal-actions">
-              <button className="modal-cancel" onClick={handleCancelDelete}>Cancel</button>
-              <button className="modal-save" onClick={handleConfirmDelete} style={{ background: 'linear-gradient(135deg, #f44336, #e57373)' }}>
-                🗑 Delete
+              <button className="modal-cancel" onClick={closeConfirm}>Cancel</button>
+              <button
+                className="modal-save"
+                onClick={handleConfirmAction}
+                style={{
+                  background: modalAction.action === 'delete'
+                    ? 'linear-gradient(135deg, #f44336, #e57373)'
+                    : modalAction.action === 'missed'
+                    ? 'linear-gradient(135deg, #ff9800, #ffb74d)'
+                    : 'linear-gradient(135deg, #4caf50, #81c784)',
+                }}
+              >
+                {modalAction.action === 'delete'
+                  ? '🗑 Delete'
+                  : modalAction.action === 'missed'
+                  ? '✕ Mark Missed'
+                  : '✓ Confirm'}
               </button>
             </div>
           </div>
