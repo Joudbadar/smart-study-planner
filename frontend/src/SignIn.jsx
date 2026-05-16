@@ -6,7 +6,7 @@ import { signIn, getAuthErrorMessage } from "./services/AuthService";
 const ALLOWED_DOMAINS = [
   'gmail.com', 'hotmail.com', 'outlook.com',
   'yahoo.com', 'ksu.edu.sa', 'icloud.com',
-  'live.com', 'msn.com', 'protonmail.com'
+  'live.com', 'msn.com', 'protonmail.com' , 'student.ksu.edu.sa'
 ];
 
 const isValidEmail = (email) => {

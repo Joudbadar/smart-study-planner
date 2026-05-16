@@ -3,7 +3,7 @@ import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
 import { fetchAllSessions, addSession, updateSession, deleteSession } from './services/SessionService';
 import { fetchAllTasks } from './services/TaskService';
-import './ScheduleAndTasks.css';
+
 import './StudySchedule.css';
 
 const DAYS       = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
