@@ -19,7 +19,7 @@ export default function Dashboard() {
   const [deadlines, setDeadlines]         = useState([]);
   const [allTasks, setAllTasks]           = useState([]);
   const [courses, setCourses]             = useState([]);
-  const [weekSessions, setWeekSessions]   = useState([]);
+  //const [weekSessions, setWeekSessions]   = useState([]);
   const [allSessions, setAllSessions]     = useState([]);
   const [chatbotOpen, setChatbotOpen]     = useState(false);
   const [loading, setLoading]             = useState(true);
@@ -33,7 +33,7 @@ export default function Dashboard() {
     const sessions = await fetchAllSessions(userId);
     setAllSessions(sessions);
     setTodaySessions(sessions.filter(s => s.day === TODAY));
-    setWeekSessions(sessions.filter(s => (s.weekOffset ?? 0) === 0));
+   // setWeekSessions(sessions.filter(s => (s.weekOffset ?? 0) === 0));
 
     // 2. Tasks — using fetchAllTasks from TaskService
     const tasks = await fetchAllTasks(userId);
@@ -41,7 +41,6 @@ export default function Dashboard() {
     const upcoming = tasks
       .filter(t => !t.completed)
       .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
-    
     setDeadlines(upcoming);
 
     // 3. Courses
@@ -62,17 +61,6 @@ export default function Dashboard() {
     return () => unsubscribe();
   }, []);
 
-  const handleComplete = async (session) => {
-    await updateSession(uid, session.courseId, session.taskId, session.id, { status: 'completed' });
-    setTodaySessions(prev => prev.map(s => s.id === session.id ? { ...s, status: 'completed' } : s));
-    setAllSessions(prev => prev.map(s => s.id === session.id ? { ...s, status: 'completed' } : s));
-  };
-
-  const handleMiss = async (session) => {
-    await updateSession(uid, session.courseId, session.taskId, session.id, { status: 'missed' });
-    setTodaySessions(prev => prev.map(s => s.id === session.id ? { ...s, status: 'missed' } : s));
-    setAllSessions(prev => prev.map(s => s.id === session.id ? { ...s, status: 'missed' } : s));
-  };
 
   // Stats
   const totalItems     = allTasks.length + allSessions.length;
@@ -80,7 +68,9 @@ export default function Dashboard() {
                          allSessions.filter(s => s.status === 'completed').length;
   const completionRate = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
 
-  const studyHours = allSessions
+  // Replace your current studyHours calculation in Dashboard.jsx with this:
+
+const studyHours = allSessions
   .filter((s) => {
     // Only count completed sessions
     if (s.status !== 'completed') return false;
@@ -205,18 +195,35 @@ export default function Dashboard() {
             <p style={{ color: '#aaa', padding: '16px' }}>No sessions scheduled for today.</p>
           ) : (
             todaySessions.map((item) => (
-              <div key={item.id} className={`schedule-item ${item.status === 'completed' ? 'completed' : ''} ${item.status === 'missed' ? 'missed' : ''}`}>
-                <div className="schedule-time">{item.time}</div>
-                <div className="schedule-details">
-                  <div className="schedule-course">{item.course}</div>
-                  <div className="schedule-type">{item.task}</div>
-                </div>
-                <div className="schedule-actions">
-                  <button className="btn-icon btn-complete" onClick={() => handleComplete(item)}>done</button>
-                  <button className="btn-icon btn-miss"     onClick={() => handleMiss(item)}>miss</button>
-                </div>
-              </div>
-            ))
+  <div
+    key={item.id}
+    className={`schedule-item ${
+      item.status === 'completed' ? 'completed' : ''
+    } ${item.status === 'missed' ? 'missed' : ''}`}
+  >
+    <div className="schedule-time">{item.time}</div>
+
+    <div className="schedule-details">
+      <div className="schedule-course">{item.course}</div>
+      <div className="schedule-type">{item.task}</div>
+    </div>
+
+    {/* REMOVE ACTION BUTTONS COMPLETELY */}
+    <div className="schedule-status">
+      {item.status === 'completed' && (
+        <span style={{ color: 'green', fontWeight: 600 }}>Completed</span>
+      )}
+
+      {item.status === 'missed' && (
+        <span style={{ color: 'red', fontWeight: 600 }}>Missed</span>
+      )}
+
+      {!item.status && (
+        <span style={{ color: '#aaa' }}>Scheduled</span>
+      )}
+    </div>
+  </div>
+))
           )}
         </div>
 
