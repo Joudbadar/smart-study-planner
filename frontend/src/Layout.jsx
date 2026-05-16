@@ -177,14 +177,14 @@ export default function Layout({ children }) {
           <NotificationBell />
 
           {/* Profile dropdown */}
-          <div className="user-profile" ref={profileRef} style={{ position: 'relative' }}>
+          <div className="user-profile" ref={profileRef} style={{ position: 'relative', padding: '4px 8px', borderRadius: '999px', transition: 'background 0.2s, border 0.2s', border: '1.5px solid transparent', cursor: 'pointer' }}>
             <button
               className="profile-trigger"
               onClick={() => setProfileOpen(prev => !prev)}
               style={{
                 display: 'flex', alignItems: 'center', gap: '8px',
                 background: 'none', border: 'none', cursor: 'pointer',
-                padding: '4px 8px', borderRadius: '8px', transition: 'background 0.2s',
+                padding: '0',
               }}
             >
               <div style={{
@@ -285,7 +285,8 @@ export default function Layout({ children }) {
           to   { opacity: 1; transform: translateY(0); }
         }
         .profile-trigger:hover { background: none !important; }
-        .user-profile:hover { background: rgba(230, 122, 95, 0.08); border-radius: 999px; }
+        .profile-trigger:focus { outline: none; }
+        .user-profile:hover, .user-profile:focus-within { background: rgba(230, 122, 95, 0.08); border-color: #e67a5f !important; }
 
         @media (max-width: 768px) {
           .hamburger-btn { display: block !important; }

@@ -591,16 +591,28 @@ export default function StudySchedule() {
   return (
     <div className="study-schedule-wrapper">
       {/* Header */}
-      <div className="schedule-header">
-        <h1 className="schedule-title">Study Schedule</h1>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+      <div className="schedule-header" style={{ flexDirection: 'column', alignItems: 'center', textAlign: 'center', paddingBottom: '1.5rem' }}>
+        <div className="schedule-header-title-block" style={{ textAlign: 'center', marginBottom: '1rem' }}>
+          <h1 className="schedule-title" style={{
+            fontFamily: "'Poppins', sans-serif",
+            fontWeight: 800,
+            fontSize: '2.6rem',
+            letterSpacing: '-0.02em',
+            lineHeight: 1.1,
+            background: 'linear-gradient(135deg, #2d2535 0%, #4a3f4a 50%, #6b5a6b 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+            display: 'inline-block',
+          }}>Study Schedule</h1>
+         
+        </div>
+        <div className="schedule-header-actions" style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
           {rescheduling && <span style={{ fontSize: '13px', color: '#888' }}>⏳ Rescheduling...</span>}
-
           <button className="add-session-button" style={{ background: '#f0f0f0', color: '#555' }}
             onClick={() => setShowAvailability(v => !v)}>
             {showAvailability ? 'Hide' : 'Edit'} Availability
           </button>
-
           <button className="add-session-button" onClick={() => generateFullPlan()} disabled={generating}
             style={{ background: 'linear-gradient(135deg, #e67a5f, #ee9b85)', opacity: generating ? 0.7 : 1 }}>
             {generating ? ' Generating...' : ' Generate Plan'}
@@ -625,7 +637,7 @@ export default function StudySchedule() {
         <div className="ss-avail-panel">
           <div className="ss-avail-panel-header">
             <div>
-              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: '#2d2d2d' }}>Weekly Availability</h3>
+              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: '#2d2d2d', fontFamily: "'Poppins', sans-serif" }}>Weekly Availability</h3>
               <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#888' }}>
                 Click any slot to mark yourself available. Save to update your plan.
               </p>
@@ -769,12 +781,7 @@ export default function StudySchedule() {
                                     onClick={() => openConfirm('delete', session)}>🗑</button>
                                 </div>
                               )}
-                              {isDone && (
-                                <button className="ss-undo-btn"
-                                  onClick={() => openConfirm('complete', session)}>
-                                  Undo
-                                </button>
-                              )}
+
                             </div>
                           );
                         })}

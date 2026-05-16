@@ -155,7 +155,6 @@ export default function Dashboard() {
       {chatbotOpen && <Chatbot onClose={() => setChatbotOpen(false)} />}
 
       <h1 className="page-title " >Welcome! 👋</h1>
-      <p className="page-subtitle">Here is your study summary for today</p>
 
       <div className="stats-grid">
         {STATS.map(({ icon: Icon, value, label }) => (

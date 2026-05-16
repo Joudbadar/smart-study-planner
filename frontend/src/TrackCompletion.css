@@ -1,208 +1,641 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap');
 
+/* ─────────────────────────────────────────────────────────────
+   DESIGN TOKENS  — identical to StudySchedule system
+───────────────────────────────────────────────────────────── */
+:root {
+  /* Brand */
+  --brand:        #e67a5f;
+  --brand-hover:  #d4604a;
+  --brand-light:  #ffeee6;
+  --brand-grad:   linear-gradient(135deg, #e67a5f, #ee9b85);
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap');
+  /* Surfaces */
+  --bg:           #faf7f5;          /* warm off-white page bg */
+  --surface:      #ffffff;
+  --border:       #f0e8e4;          /* warm light border */
+  --border-mid:   #e8dcd8;
 
-/* ===== Page Wrapper ===== */
-.track-wrapper {
+  /* Text */
+  --text:         #2d2d2d;          /* matches "Manage Your Courses" heading colour */
+  --text-light:   #555555;
+  --muted:        #9e8f89;
+
+  /* Radii / shadows */
+  --r-sm:         8px;
+  --r-md:         12px;
+  --r-lg:         16px;
+  --r-xl:         20px;
+  --shadow-sm:    0 2px 10px rgba(0,0,0,0.05);
+  --shadow-md:    0 4px 15px rgba(0,0,0,0.06);
+  --shadow-lg:    0 8px 32px rgba(0,0,0,0.10);
+
+  /* Status colours */
+  --c-complete:   #4caf50;
+  --c-missed:     #f44336;
+  --c-pending:    #ff9800;
+  --c-reschedule: #8b5cf6;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* Ensure the warm background fills the entire page behind the wrapper */
+html, body {
+  background: #faf7f5;
+  min-height: 100%;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   WRAPPER
+───────────────────────────────────────────────────────────── */
+.tc-wrapper {
   font-family: 'Inter', sans-serif;
+  background: #faf7f5;
   min-height: 100vh;
-  background: linear-gradient(135deg, #fef6f4 0%, #ffe8e0 100%);
-  color: #2d2d2d;
+  color: var(--text);
+  padding: 2rem 2.5rem 4rem;
+  max-width: 1100px;
+  margin: 0 auto;
 }
 
-/* ===== Header ===== */
-.track-header {
-  background: white;
-  padding: 1.2rem 2rem;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-  display: flex;
-  align-items: center;
-  height: 120px;
+/* ─────────────────────────────────────────────────────────────
+   LOADING
+───────────────────────────────────────────────────────────── */
+.tc-loading {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  min-height: 60vh; gap: 1rem; color: var(--muted);
+}
+.tc-spinner {
+  width: 32px; height: 32px;
+  border: 3px solid var(--brand-light);
+  border-top-color: var(--brand);
+  border-radius: 50%;
+  animation: tc-spin 0.7s linear infinite;
+}
+@keyframes tc-spin { to { transform: rotate(360deg); } }
+
+/* ─────────────────────────────────────────────────────────────
+   PAGE HEADER  — centered title block matching "Manage Your Courses"
+   layout: full-width center, gradient text, subtitle below
+───────────────────────────────────────────────────────────── */
+.tc-page-header {
+  text-align: center;
+  padding: 2.5rem 1rem 1.75rem;
+  margin-bottom: 0.25rem;
 }
 
-.track-logo {
+/* Title: Poppins 800, large, dark purple-brown gradient exactly
+   matching the reference screenshot */
+.tc-page-title {
   font-family: 'Poppins', sans-serif;
-  font-size: 1.5rem;
+  font-size: 2.6rem;
   font-weight: 800;
-  background: linear-gradient(135deg, #e67a5f, #ee9b85);
-  background-clip: text;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  /* Dark purple-brown gradient matching the image */
+  background: linear-gradient(135deg, #2d2535 0%, #4a3f4a 50%, #6b5a6b 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  background-clip: text;
+  display: inline-block;
+}
+.tc-page-sub {
+  color: var(--muted);
+  margin-top: 0.55rem;
+  font-size: 0.95rem;
+  font-weight: 400;
 }
 
-/* ===== Layout ===== */
-.track-container {
-  display: flex;
-  min-height: calc(100vh - 120px);
-}
-
-/* ===== Sidebar ===== */
-.track-sidebar {
-  width: 280px;
-  background: white;
-  padding: 2rem 1.5rem;
-  box-shadow: 2px 0 10px rgba(0,0,0,0.05);
-}
-
-.track-nav-item {
-  display: flex;
-  align-items: center;
+/* ─────────────────────────────────────────────────────────────
+   METRICS GRID  (4 stat cards — same card style as StudySchedule
+   .statistic-card)
+───────────────────────────────────────────────────────────── */
+.tc-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
   gap: 1rem;
-  padding: 1rem 1.2rem;
-  margin-bottom: 0.5rem;
-  border-radius: 12px;
-  text-decoration: none;
-  color: #7a7a7a;
-  font-weight: 500;
-  transition: all 0.3s ease;
+  margin-bottom: 1.75rem;
 }
-
-.track-nav-item:hover {
-  background: #ffeee6;
-  color: #e67a5f;
-  transform: translateX(5px);
+.tc-metric-card {
+  background: var(--surface);
+  border-radius: var(--r-xl);
+  padding: 1.25rem 1.4rem;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.18s, box-shadow 0.18s;
 }
-
-.track-nav-item.active {
-  background: linear-gradient(135deg, #e67a5f, #ee9b85);
-  color: white;
-  font-weight: 600;
+.tc-metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
 }
-
-/* ===== Main Content ===== */
-.track-main {
-  flex: 1;
-  padding: 2rem;
-  overflow-y: auto;
+.tc-metric-top {
+  display: flex; align-items: center;
+  justify-content: space-between; margin-bottom: 0.85rem;
 }
-
-.track-title {
-  font-family: 'Poppins', sans-serif;
-  font-size: 2rem;
-  font-weight: 800;
-  margin-bottom: 0.5rem;
-}
-
-.track-subtitle {
-  color: #7a7a7a;
-  margin-bottom: 2rem;
-}
-
-/* ===== Cards ===== */
-.track-card {
-  background: white;
-  padding: 1.8rem;
-  border-radius: 16px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.06);
-  margin-bottom: 2rem;
-}
-
-.track-card h2 {
-  font-family: 'Poppins', sans-serif;
-  font-size: 1.3rem;
-  font-weight: 700;
-  margin-bottom: 1.5rem;
-}
-
-/* ===== Overall Rate ===== */
-.overall-rate {
-  font-size: 1.3rem;
-  font-weight: 700;
-  margin-bottom: 1rem;
-}
-
-/* ===== Progress Bars ===== */
-.track-progress-bar {
-  height: 10px;
-  background: #ffeee6;
-  border-radius: 10px;
-  overflow: hidden;
-}
-
-.track-progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #e67a5f, #ee9b85);
-  border-radius: 10px;
-  transition: width 0.5s ease;
-}
-
-/* ===== Course Breakdown ===== */
-.track-course-item {
-  margin-bottom: 1.5rem;
-}
-
-.track-course-info {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.5rem;
-  font-weight: 600;
-}
-
-/* ===== Session Status Badge ===== */
-.session-status-badge {
-  padding: 3px 12px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: capitalize;
+.tc-metric-icon {
+  width: 40px; height: 40px;
+  border-radius: var(--r-md);
+  display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
 }
+.tc-metric-icon svg { width: 20px; height: 20px; }
 
-.session-status-badge.pending   { background: #fff3e0; color: #ff9800; }
-.session-status-badge.completed { background: #e8f5e9; color: #4caf50; }
-.session-status-badge.missed    { background: #ffebee; color: #f44336; }
-
-/* ===== Weekly Chart ===== */
-.track-chart {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  height: 200px;
-  gap: 1rem;
-  padding-top: 1rem;
+/* Trend chips */
+.tc-trend {
+  display: flex; align-items: center; gap: 3px;
+  font-size: 0.73rem; font-weight: 600;
+  padding: 3px 8px; border-radius: 99px;
+}
+.tc-trend svg { width: 12px; height: 12px; }
+.tc-trend.up   { color: #2e7d32; background: #e8f5e9; }
+.tc-trend.down { color: #c62828; background: #ffebee; }
+.tc-trend-badge {
+  font-size: 0.71rem; font-weight: 600;
+  padding: 3px 8px; border-radius: 99px;
 }
 
-.chart-bar {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+/* Value uses Poppins like .statistic-number */
+.tc-metric-value {
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.7rem; font-weight: 800;
+  color: var(--text); line-height: 1;
+  margin-bottom: 0.2rem;
+}
+.tc-metric-label {
+  font-size: 0.78rem; font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.05em;
 }
 
-.bar {
-  width: 100%;
-  background: linear-gradient(180deg, #e67a5f, #ee9b85);
-  border-radius: 8px 8px 0 0;
-  position: relative;
-  transition: 0.3s ease;
-  min-height: 4px;
+/* ─────────────────────────────────────────────────────────────
+   TABS  — identical pattern to StudySchedule add-session-button
+   pill row but styled as a segmented control
+───────────────────────────────────────────────────────────── */
+.tc-tabs {
+  display: flex; gap: 2px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 4px; width: fit-content;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 1.5rem;
+}
+.tc-tab {
+  padding: 0.5rem 1.25rem;
+  border-radius: var(--r-sm);
+  border: none; background: transparent;
+  color: var(--muted);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.88rem; font-weight: 600;
+  cursor: pointer; transition: all 0.15s;
+}
+.tc-tab:hover { color: var(--brand); }
+.tc-tab.active {
+  background: var(--brand-grad);
+  color: white;
+  box-shadow: 0 2px 8px rgba(230,122,95,0.35);
 }
 
-.bar:hover {
-  background: linear-gradient(180deg, #d66850, #e67a5f);
-  transform: translateY(-5px);
+/* ─────────────────────────────────────────────────────────────
+   TAB CONTENT
+───────────────────────────────────────────────────────────── */
+.tc-tab-content { display: flex; flex-direction: column; gap: 1.25rem; }
+
+/* ─────────────────────────────────────────────────────────────
+   CARDS  — same as StudySchedule .statistic-card / modal-card
+───────────────────────────────────────────────────────────── */
+.tc-card {
+  background: var(--surface);
+  border-radius: var(--r-xl);
+  padding: 1.5rem 1.6rem;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-md);
+}
+.tc-card-header {
+  display: flex; align-items: flex-start;
+  justify-content: space-between; flex-wrap: wrap;
+  gap: 0.75rem; margin-bottom: 1.25rem;
+}
+/* Card titles use Poppins 700 — matching StudySchedule h2 style */
+.tc-card-title {
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.05rem; font-weight: 700;
+  color: var(--text);
+  display: flex; align-items: center; gap: 0.5rem;
+}
+.tc-card-sub {
+  font-size: 0.78rem; color: var(--muted); margin-top: 2px;
+}
+.tc-count-chip {
+  background: var(--brand-light); color: var(--brand);
+  font-size: 0.72rem; font-weight: 700;
+  padding: 2px 8px; border-radius: 99px;
+  font-family: 'Inter', sans-serif;
+}
+.tc-empty {
+  text-align: center; color: var(--muted);
+  padding: 2.5rem 0; font-size: 0.88rem;
 }
 
-.bar-value {
-  position: absolute;
-  top: -25px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-weight: 700;
-  font-size: 0.85rem;
-  white-space: nowrap;
+/* ─────────────────────────────────────────────────────────────
+   TWO-COLUMN LAYOUT
+───────────────────────────────────────────────────────────── */
+.tc-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
 }
 
-.bar-label {
-  margin-top: 0.5rem;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #7a7a7a;
+/* ─────────────────────────────────────────────────────────────
+   WEEKLY BAR CHART  — same warm palette as schedule calendar
+───────────────────────────────────────────────────────────── */
+.tc-chart-legend {
+  display: flex; gap: 1.25rem;
+  font-size: 0.78rem; color: var(--muted);
+  margin-bottom: 0.9rem;
+}
+.tc-legend-item { display: flex; align-items: center; gap: 6px; }
+.tc-legend-dot  {
+  width: 10px; height: 10px;
+  border-radius: 50%; display: inline-block; flex-shrink: 0;
+}
+.tc-bar-chart {
+  display: flex; align-items: flex-end;
+  gap: 0.5rem; height: 200px;
+}
+.tc-bc-col {
+  flex: 1; display: flex;
+  flex-direction: column; align-items: center; height: 100%;
+}
+.tc-bc-bars {
+  flex: 1; width: 100%; position: relative;
+  display: flex; align-items: flex-end; justify-content: center;
+}
+/* ghost target bar */
+.tc-bc-target {
+  position: absolute; bottom: 0;
+  width: 100%; max-width: 36px;
+  background: var(--border);
+  border-radius: 6px 6px 0 0;
+  transition: height 0.5s cubic-bezier(.4,0,.2,1);
+}
+/* actual bar — brand coral gradient */
+.tc-bc-actual {
+  position: relative; z-index: 1;
+  width: 100%; max-width: 36px;
+  background: linear-gradient(180deg, #e67a5f 0%, #ee9b85 100%);
+  border-radius: 6px 6px 0 0;
+  transition: height 0.5s cubic-bezier(.4,0,.2,1);
+}
+.tc-bc-actual.met {
+  background: linear-gradient(180deg, #4caf50 0%, #81c784 100%);
+}
+.tc-bc-val {
+  position: absolute; top: -20px;
+  font-size: 0.68rem; font-weight: 700;
+  color: var(--brand); white-space: nowrap;
+}
+.tc-bc-actual.met .tc-bc-val { color: #388e3c; }
+.tc-bc-day {
+  margin-top: 6px; font-size: 0.75rem;
+  font-weight: 600; color: var(--muted);
+}
+.tc-chart-summary {
+  display: flex; gap: 1.5rem;
+  margin-top: 1rem; font-size: 0.8rem; color: var(--muted);
+  border-top: 1px solid var(--border);
+  padding-top: 0.9rem;
+}
+.tc-chart-summary strong { color: var(--text); }
+
+/* Week nav — same style as .week-nav-btn in StudySchedule */
+.tc-week-nav {
+  display: flex; align-items: center; gap: 4px;
+}
+.tc-week-btn {
+  width: 28px; height: 28px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--bg); color: var(--text);
+  font-size: 0.85rem; font-weight: 700;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+.tc-week-btn:hover {
+  background: var(--brand-light);
+  color: var(--brand);
+  border-color: var(--brand);
+}
+.tc-week-label {
+  font-size: 0.8rem; font-weight: 700;
+  color: var(--text); min-width: 70px; text-align: center;
+}
+.tc-week-today {
+  font-size: 0.73rem; font-weight: 600;
+  color: var(--brand); background: var(--brand-light);
+  border: none; border-radius: 6px; padding: 3px 8px;
+  cursor: pointer; transition: opacity 0.14s;
+}
+.tc-week-today:hover { opacity: 0.75; }
+
+/* ─────────────────────────────────────────────────────────────
+   ACHIEVEMENTS CARD
+───────────────────────────────────────────────────────────── */
+/* Streak banner — warm brand gradient strip */
+.tc-streak-banner {
+  display: flex; align-items: center; gap: 1rem;
+  background: linear-gradient(135deg, #fff8f0, var(--brand-light));
+  border: 1px solid #ffd5c0;
+  border-radius: var(--r-lg);
+  padding: 1rem 1.2rem;
+  margin-bottom: 1rem;
+}
+.tc-streak-icon {
+  width: 44px; height: 44px;
+  border-radius: var(--r-md);
+  background: rgba(230,122,95,0.15);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--brand); flex-shrink: 0;
+}
+.tc-streak-icon svg { width: 24px; height: 24px; }
+.tc-streak-val {
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.5rem; font-weight: 800; color: var(--text);
+}
+.tc-streak-sub { font-size: 0.78rem; color: var(--muted); margin-top: 1px; }
+
+.tc-badge-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr);
+  gap: 0.6rem; margin-bottom: 1rem;
+}
+.tc-badge-item {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 0.75rem 0.5rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  gap: 6px; transition: border-color 0.15s;
+}
+.tc-badge-item:hover { border-color: #ffd5c0; }
+.tc-badge-item.locked { opacity: 0.35; filter: grayscale(0.5); }
+.tc-badge-icon {
+  width: 36px; height: 36px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+}
+.tc-badge-icon svg { width: 18px; height: 18px; }
+.tc-badge-name {
+  font-size: 0.71rem; font-weight: 600;
+  color: var(--muted); text-align: center;
 }
 
-/* ===== Responsive ===== */
-@media (max-width: 768px) {
-  .track-sidebar { display: none; }
-  .track-chart   { height: 150px; }
+.tc-weekly-goal { padding-top: 1rem; border-top: 1px solid var(--border); }
+.tc-weekly-goal-header {
+  display: flex; justify-content: space-between;
+  font-size: 0.82rem; font-weight: 600; color: var(--text);
+  margin-bottom: 0.5rem;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   PROGRESS BARS — same warm-peach track as schedule availability
+───────────────────────────────────────────────────────────── */
+.tc-prog-track {
+  height: 8px;
+  background: #f5ece9;   /* same warm tint as schedule unavailable cells */
+  border-radius: 99px; overflow: hidden;
+}
+.tc-prog-fill {
+  height: 100%; border-radius: 99px;
+  transition: width 0.55s cubic-bezier(.4,0,.2,1);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   COURSE PERFORMANCE ROWS (Overview)
+───────────────────────────────────────────────────────────── */
+.tc-course-perf-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0 0.75rem;
+  margin-bottom: 1rem;
+}
+.tc-course-perf-row:last-child { margin-bottom: 0; }
+.tc-course-perf-left {
+  display: flex; align-items: center; gap: 0.75rem; min-width: 0;
+}
+.tc-course-accent-bar {
+  width: 4px; height: 36px; border-radius: 99px; flex-shrink: 0;
+}
+.tc-course-perf-name {
+  font-size: 0.88rem; font-weight: 600; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.tc-course-perf-meta { font-size: 0.73rem; color: var(--muted); margin-top: 1px; }
+.tc-course-perf-right { display: flex; align-items: center; }
+.tc-course-pct { font-size: 0.88rem; font-weight: 700; }
+
+.tc-view-all {
+  display: flex; align-items: center; gap: 2px;
+  font-size: 0.8rem; font-weight: 600; color: var(--brand);
+  background: none; border: none; cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  transition: opacity 0.14s;
+}
+.tc-view-all:hover { opacity: 0.7; }
+.tc-view-all svg { width: 14px; height: 14px; }
+
+/* ─────────────────────────────────────────────────────────────
+   RECENT ACTIVITY ROWS (Overview)
+───────────────────────────────────────────────────────────── */
+.tc-activity-row {
+  display: flex; align-items: center; gap: 0.9rem;
+  padding: 0.7rem 0.9rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  margin-bottom: 0.5rem;
+  transition: border-color 0.15s;
+}
+.tc-activity-row:last-child { margin-bottom: 0; }
+.tc-activity-row:hover { border-color: #ffd5c0; }
+.tc-activity-icon {
+  width: 36px; height: 36px;
+  border-radius: var(--r-sm);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.tc-activity-icon svg { width: 18px; height: 18px; }
+.tc-activity-icon.done { background: #e8f5e9; color: #4caf50; }
+.tc-activity-icon.miss { background: #ffebee; color: #f44336; }
+.tc-activity-body { flex: 1; min-width: 0; }
+.tc-activity-task {
+  display: block; font-size: 0.85rem; font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.tc-activity-course { display: block; font-size: 0.73rem; color: var(--muted); }
+.tc-activity-meta { text-align: right; flex-shrink: 0; }
+.tc-activity-dur  { display: block; font-size: 0.82rem; font-weight: 600; }
+.tc-activity-date { display: block; font-size: 0.72rem; color: var(--muted); }
+
+/* ─────────────────────────────────────────────────────────────
+   INSIGHT BANNER — warm brand-tinted strip
+───────────────────────────────────────────────────────────── */
+.tc-insight-banner {
+  display: flex; align-items: flex-start; gap: 1rem;
+  background: linear-gradient(135deg, rgba(230,122,95,0.06), rgba(238,155,133,0.11));
+  border: 1px solid rgba(230,122,95,0.22);
+  border-radius: var(--r-xl);
+  padding: 1.2rem 1.4rem;
+}
+.tc-insight-icon {
+  width: 42px; height: 42px; flex-shrink: 0;
+  border-radius: var(--r-md);
+  background: rgba(230,122,95,0.15);
+  color: var(--brand);
+  display: flex; align-items: center; justify-content: center;
+}
+.tc-insight-icon svg { width: 22px; height: 22px; }
+.tc-insight-title {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.92rem; font-weight: 700;
+  color: var(--text); margin-bottom: 4px;
+}
+.tc-insight-body { font-size: 0.84rem; color: var(--muted); line-height: 1.55; }
+
+/* ─────────────────────────────────────────────────────────────
+   FILTER PILLS — same style as StudySchedule action buttons
+───────────────────────────────────────────────────────────── */
+.tc-filter-row { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.tc-filter-btn {
+  padding: 4px 12px; border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--bg); color: var(--muted);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.76rem; font-weight: 600;
+  cursor: pointer; transition: all 0.14s; text-transform: capitalize;
+}
+.tc-filter-btn:hover {
+  background: var(--brand-light);
+  color: var(--brand);
+  border-color: #ffd5c0;
+}
+.tc-filter-btn.active {
+  background: var(--brand-grad);
+  color: white; border-color: var(--brand);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   SESSION ROWS (Sessions tab)
+   — same divider style as schedule calendar rows
+───────────────────────────────────────────────────────────── */
+.tc-session-row {
+  display: flex; align-items: center; gap: 0.9rem;
+  padding: 0.8rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.tc-session-row:last-child { border-bottom: none; }
+.tc-session-status-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+}
+.tc-session-body { flex: 1; min-width: 0; }
+.tc-session-task {
+  display: block; font-size: 0.88rem; font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.tc-session-course { display: block; font-size: 0.75rem; color: var(--muted); margin-top: 1px; }
+.tc-session-right { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
+.tc-session-time, .tc-session-date { font-size: 0.73rem; color: var(--muted); white-space: nowrap; }
+
+/* ─────────────────────────────────────────────────────────────
+   COURSES TAB
+───────────────────────────────────────────────────────────── */
+.tc-course-radials {
+  display: flex; flex-wrap: wrap; gap: 1.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  padding: 1.4rem 1.6rem;
+  box-shadow: var(--shadow-sm);
+  justify-content: center;
+}
+.tc-course-radial-item {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+}
+.tc-course-radial-name {
+  font-size: 0.72rem; font-weight: 600; color: var(--muted);
+  max-width: 80px; text-align: center; line-height: 1.3;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.tc-course-detail-top {
+  display: flex; align-items: flex-start; gap: 0.9rem;
+}
+.tc-course-accent-bar-lg {
+  width: 5px; height: 48px; border-radius: 99px;
+  flex-shrink: 0; margin-top: 4px;
+}
+.tc-course-detail-name {
+  font-family: 'Poppins', sans-serif;
+  font-size: 1rem; font-weight: 700; margin-bottom: 3px;
+}
+.tc-course-detail-meta { font-size: 0.76rem; color: var(--muted); }
+.tc-course-detail-footer {
+  display: flex; justify-content: space-between;
+  font-size: 0.76rem; color: var(--muted); margin-top: 8px;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   TASKS TAB
+───────────────────────────────────────────────────────────── */
+.tc-task-row {
+  display: flex; align-items: center; gap: 0.85rem;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid var(--border);
+  transition: opacity 0.18s;
+}
+.tc-task-row:last-child { border-bottom: none; }
+.tc-task-row.done { opacity: 0.48; }
+.tc-task-check {
+  flex-shrink: 0; width: 20px; height: 20px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--muted);
+}
+.tc-task-check svg { width: 18px; height: 18px; }
+.tc-task-check.checked { color: #4caf50; }
+.tc-task-circle {
+  display: block; width: 16px; height: 16px;
+  border-radius: 50%; border: 2px solid var(--border-mid);
+}
+.tc-task-body { flex: 1; min-width: 0; }
+.tc-task-title {
+  display: block; font-size: 0.88rem; font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.tc-task-title.strike { text-decoration: line-through; }
+.tc-task-course { display: block; font-size: 0.73rem; color: var(--muted); margin-top: 1px; }
+.tc-task-right { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
+.tc-task-due   { font-size: 0.73rem; color: var(--muted); white-space: nowrap; }
+
+/* ─────────────────────────────────────────────────────────────
+   BADGE PILL — same style as .ss-status-badge in StudySchedule
+───────────────────────────────────────────────────────────── */
+.tc-badge {
+  display: inline-block; padding: 3px 10px;
+  border-radius: 99px; font-size: 0.7rem;
+  font-weight: 700; white-space: nowrap;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   RESPONSIVE
+───────────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .tc-metrics-grid { grid-template-columns: repeat(2, 1fr); }
+  .tc-two-col      { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .tc-wrapper      { padding: 1.1rem 1rem 3rem; }
+  .tc-page-title   { font-size: 1.9rem; }
+  .tc-metrics-grid { gap: 0.75rem; }
+  .tc-tabs         { width: 100%; overflow-x: auto; }
+  .tc-session-time { display: none; }
+  .tc-bar-chart    { height: 150px; }
 }

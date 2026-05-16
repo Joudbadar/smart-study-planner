@@ -158,7 +158,7 @@ export default function TasksDeadlines() {
     <div className="w-full">
       <header className="cm-header">
         <h1 className="cm-title">Tasks & Deadlines</h1>
-        <p className="cm-subtitle">Track your assignments, projects, and study priorities</p>
+       
       </header>
 
       <div className="cm-summary">

@@ -155,7 +155,6 @@ export default function CourseManagement() {
 
       <header className="cm-header">
         <h1 className="cm-title">Manage Your Courses</h1>
-        <p className="cm-subtitle">Add, edit, and remove courses to organize your study plan effectively</p>
       </header>
 
       <div className="cm-summary">
