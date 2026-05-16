@@ -12,16 +12,18 @@ import TrackCompletion from './TrackCompletion';
 import WeeklyAvailability from './WeeklyAvailability';
 import StudyPlan from './StudyPlan';
 import StudySchedule from './StudySchedule';      
-import TasksDeadlines from './TasksDeadlines';     
+import TasksDeadlines from './TasksDeadlines';  
 
 function App() {
   return (
     <Router>
       <Routes>
+        {/* الصفحات العامة (بدون القالب الداخلي للموقع) */}
         <Route path="/" element={<WelcomePage />} />
         <Route path="/create-account" element={<CreateAccount />} />
         <Route path="/signin" element={<SignIn />} />
 
+        {/* الصفحات الداخلية للمستخدم (محمية ومغلفة بالـ Layout) */}
         <Route
           path="/dashboard"
           element={
@@ -49,7 +51,6 @@ function App() {
           }
         />
       
-
         <Route
           path="/availability"
           element={
@@ -66,15 +67,25 @@ function App() {
               <StudyPlan />
             </Layout>
           }
-        
         />
-         <Route 
-         path="/schedule" 
-         element={<Layout><StudySchedule /></Layout>} />
-        <Route 
-        path="/tasks"
-         element={<Layout><TasksDeadlines /></Layout>} />
 
+        <Route 
+          path="/schedule" 
+          element={
+            <Layout>
+              <StudySchedule />
+            </Layout>
+          } 
+        />
+
+        <Route 
+          path="/tasks"
+          element={
+            <Layout>
+              <TasksDeadlines />
+            </Layout>
+          } 
+        />
       </Routes>
     </Router>
   );

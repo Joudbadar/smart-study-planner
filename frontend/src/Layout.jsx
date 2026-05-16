@@ -10,11 +10,14 @@ import {
   Clock,
   CalendarDays,
   BarChart3,
-  GraduationCap,
   Bell,
+  GraduationCap,
   User,
   LogOut,
 } from "lucide-react";
+
+
+import NotificationBell from './NotificationBell'; 
 
 const NAV_ITEMS = [
   { icon: LayoutDashboard, label: 'Dashboard',           path: '/dashboard' },
@@ -79,7 +82,6 @@ export default function Layout({ children }) {
     setProfileOpen(false);
     navigate('/');
   };
-
 
   return (
     <div className="dashboard">
@@ -174,18 +176,8 @@ export default function Layout({ children }) {
         {/* Header right: bell + profile */}
         <div className="header-right" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
 
-          {/* Bell */}
-          <button style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: 'none', border: 'none', cursor: 'pointer',
-            padding: '8px', borderRadius: '8px', color: '#888',
-            transition: 'background 0.2s, color 0.2s',
-          }}
-            className="icon-btn"
-            title="Notifications"
-          >
-            <Bell size={20} />
-          </button>
+         
+          <NotificationBell />
 
           {/* Profile dropdown */}
           <div className="user-profile" ref={profileRef} style={{ position: 'relative' }}>
@@ -296,7 +288,6 @@ export default function Layout({ children }) {
           to   { opacity: 1; transform: translateY(0); }
         }
         .profile-trigger:hover { background: rgba(0,0,0,0.05) !important; }
-        .icon-btn:hover { background: rgba(0,0,0,0.05) !important; color: #e67a5f !important; }
 
         @media (max-width: 768px) {
           .hamburger-btn { display: block !important; }
