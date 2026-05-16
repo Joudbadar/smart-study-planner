@@ -5,7 +5,7 @@ import { fetchAllSessions, addSession, updateSession, deleteSession } from './se
 import { fetchAllTasks } from './services/TaskService';
 import { fetchCourses } from './services/CourseService';
 import { auth, db } from './services/firebase';
-import './ScheduleAndTasks.css';
+import './TasksDeadlines.css';
 import './StudyPlan.css';
 import React from 'react';
 

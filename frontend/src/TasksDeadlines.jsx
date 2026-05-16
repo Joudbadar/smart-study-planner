@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, collection, getDocs } from 'firebase/firestore';
 import { fetchAllTasks, addTask, updateTask, deleteTask, propagateTaskEdit } from './services/TaskService';
-import './ScheduleAndTasks.css';
+import './TasksDeadlines.css';
 
 function getTodayStr() {
   const t = new Date();

@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "./services/firebase";
-import "./ScheduleAndTasks.css";
+import "./TasksDeadlines.css";
 import "./WeeklyAvailability.css";
 
 const defaultAvailability = [
