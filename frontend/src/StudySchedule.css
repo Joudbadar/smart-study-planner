@@ -1,0 +1,348 @@
+/* StudySchedule.css
+   Styles specific to the time-grid Study Schedule view.
+   Base layout, modals, week-nav, stats, and buttons come from ScheduleAndTasks.css.
+*/
+
+/* ── Availability grid toggle buttons ── */
+.ss-avail-slot {
+  height: 28px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.ss-avail-slot:hover {
+  filter: brightness(0.93);
+  transform: scale(1.04);
+}
+
+/* ── Time-grid calendar container ── */
+.ss-calendar {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+  flex: 1;
+  min-height: 0;
+}
+
+.ss-calendar-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.ss-calendar-inner {
+  min-width: 700px;
+}
+
+/* ── Day header row ── */
+.ss-day-headers {
+  display: grid;
+  grid-template-columns: 60px repeat(7, 1fr);
+  border-bottom: 2px solid #f0e0d8;
+  position: sticky;
+  top: 0;
+  background: white;
+  z-index: 2;
+}
+
+.ss-day-header-cell {
+  padding: 12px 6px;
+  text-align: center;
+  border-right: 1px solid #f5ece9;
+}
+
+.ss-day-header-cell:last-child {
+  border-right: none;
+}
+
+.ss-day-header-cell.today {
+  background: #fef6f4;
+}
+
+.ss-day-short {
+  font-size: 12px;
+  font-weight: 600;
+  color: #888;
+  margin-bottom: 4px;
+}
+
+.ss-day-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: 700;
+  color: #2d2d2d;
+}
+
+.ss-day-number.today {
+  background: linear-gradient(135deg, #e67a5f, #ee9b85);
+  color: white;
+}
+
+/* ── Time rows ── */
+.ss-time-body {
+  max-height: 560px;
+  overflow-y: auto;
+}
+
+.ss-time-row {
+  display: grid;
+  grid-template-columns: 60px repeat(7, 1fr);
+  border-bottom: 1px solid #f5ece9;
+}
+
+.ss-time-row:last-child {
+  border-bottom: none;
+}
+
+.ss-time-label {
+  padding: 8px 8px 6px 0;
+  text-align: right;
+  font-size: 11px;
+  color: #bbb;
+  border-right: 1px solid #f5ece9;
+}
+
+.ss-time-cell {
+  min-height: 70px;
+  padding: 4px;
+  border-right: 1px solid #f5ece9;
+  transition: background 0.15s;
+}
+
+.ss-time-cell:last-child {
+  border-right: none;
+}
+
+.ss-time-cell.today-col {
+  background: #fef6f4;
+}
+
+.ss-time-cell.unavailable {
+  background: #fafafa;
+}
+
+/* ── Session card inside time grid ── */
+.ss-session-card {
+  border-left-width: 4px;
+  border-left-style: solid;
+  border-radius: 8px;
+  padding: 6px 8px;
+  margin-bottom: 3px;
+  font-size: 11px;
+  transition: box-shadow 0.2s, transform 0.2s;
+  cursor: default;
+}
+
+.ss-session-card:hover {
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.ss-session-card.completed {
+  opacity: 0.6;
+}
+
+.ss-session-card.missed {
+  opacity: 0.55;
+}
+
+.ss-session-title {
+  font-weight: 700;
+  color: #2d2d2d;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-bottom: 1px;
+}
+
+.ss-session-title.done {
+  text-decoration: line-through;
+}
+
+.ss-session-course {
+  color: #888;
+  font-size: 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ss-session-time-label {
+  font-size: 10px;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+/* ── Status badge ── */
+.ss-status-badge {
+  display: inline-block;
+  margin-top: 3px;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 10px;
+}
+
+/* ── Session action buttons ── */
+.ss-action-btns {
+  display: flex;
+  gap: 3px;
+  margin-top: 4px;
+}
+
+.ss-action-btn {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  transition: transform 0.15s, filter 0.15s;
+}
+
+.ss-action-btn:hover {
+  transform: scale(1.15);
+  filter: brightness(0.9);
+}
+
+.ss-btn-complete { background: #e8f5e9; color: #4caf50; }
+.ss-btn-missed   { background: #ffebee; color: #f44336; }
+.ss-btn-delete   { background: #f5f5f5; color: #888; }
+
+.ss-undo-btn {
+  margin-top: 4px;
+  font-size: 9px;
+  background: none;
+  border: none;
+  color: #aaa;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+}
+
+.ss-undo-btn:hover {
+  color: #666;
+}
+
+/* ── Legend ── */
+.ss-legend {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 16px;
+  font-size: 12px;
+  color: #888;
+}
+
+.ss-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ss-legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+/* ── Toggle switch ── */
+.ss-toggle-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #555;
+  cursor: pointer;
+  user-select: none;
+}
+
+.ss-toggle-track {
+  width: 36px;
+  height: 20px;
+  border-radius: 10px;
+  position: relative;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.ss-toggle-thumb {
+  position: absolute;
+  top: 3px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: white;
+  transition: left 0.2s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* ── Availability editor panel ── */
+.ss-avail-panel {
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+  overflow-x: auto;
+}
+
+.ss-avail-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.ss-avail-grid {
+  display: grid;
+  grid-template-columns: 60px repeat(7, 1fr);
+  gap: 3px;
+  min-width: 600px;
+}
+
+.ss-avail-day-header {
+  text-align: center;
+  font-weight: 700;
+  font-size: 12px;
+  color: #2d2d2d;
+  padding: 4px 0;
+}
+
+.ss-avail-time-label {
+  text-align: right;
+  font-size: 11px;
+  color: #aaa;
+  padding: 4px 6px 4px 0;
+  line-height: 28px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .ss-avail-panel-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ss-legend {
+    gap: 10px;
+    font-size: 11px;
+  }
+
+  .ss-toggle-wrapper {
+    font-size: 12px;
+  }
+}

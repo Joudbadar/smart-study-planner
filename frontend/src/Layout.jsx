@@ -3,15 +3,23 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import { getFirestore, doc, getDoc, updateDoc } from "firebase/firestore";
 import React from 'react';
+import {
+  LayoutDashboard,
+  BookOpen,
+  CheckSquare,
+  Clock,
+  CalendarDays,
+  BarChart3,
+  GraduationCap,
+} from "lucide-react";
 
 const NAV_ITEMS = [
-  { icon: '🏠', label: 'Dashboard', path: '/dashboard' },
-  { icon: '📖', label: 'My Courses', path: '/courses' },
-  { icon: '✅', label: 'Tasks & Deadlines', path: '/tasks' },
-  { icon: '🕒', label: 'Weekly Availability', path: '/availability' },
-  { icon: '📅', label: 'Study Schedule', path: '/schedule' },
-  { icon: '📊', label: 'Progress & Analytics', path: '/track' },
-  //{ icon: '📅', label: 'Study Plan', path: '/study-plan' },
+  { icon: LayoutDashboard, label: 'Dashboard',           path: '/dashboard' },
+  { icon: BookOpen,        label: 'My Courses',          path: '/courses' },
+  { icon: CheckSquare,     label: 'Tasks & Deadlines',   path: '/tasks' },
+  { icon: Clock,           label: 'Weekly Availability', path: '/availability' },
+  { icon: CalendarDays,    label: 'Study Schedule',      path: '/schedule' },
+  { icon: BarChart3,       label: 'Progress & Analytics',path: '/track' },
 ];
 
 const EMOJI_OPTIONS = ['\u{1F427}', '\u{1F428}', '\u{1F98A}', '\u{1F438}', '\u{1F98B}', '\u{1F43C}', '\u{1F984}', '\u{1F419}', '\u{1F981}', '\u{1F996}'];
@@ -19,77 +27,93 @@ const EMOJI_OPTIONS = ['\u{1F427}', '\u{1F428}', '\u{1F98A}', '\u{1F438}', '\u{1
 export default function Layout({ children }) {
   const location = useLocation();
   const navigate = useNavigate();
+
   const [profileOpen, setProfileOpen] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuOpen,    setMenuOpen]    = useState(false);
+  const [isDesktop,   setIsDesktop]   = useState(window.innerWidth >= 750);
+
+  // Fix: use state for emoji and name so the UI re-renders when they change
+  const [name,  setName]  = useState(localStorage.getItem('userName') || 'User');
+  const [emoji, setEmoji] = useState(localStorage.getItem('emoji') || '\u{1F427}');
+
   const profileRef = useRef(null);
-  const menuRef = useRef(null);
-  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 750);
-  const name = localStorage.getItem("userName") || "User";
-  const emoji = localStorage.getItem("emoji")|| '\u{1F427}';
+  const menuRef    = useRef(null);
 
-  // No useEffect needed — menu is closed via onClick on each Link
-
+  // Load user data from Firestore on auth
   useEffect(() => {
     const auth = getAuth();
-    const db = getFirestore();
+    const db   = getFirestore();
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        // setDisplayName(user.displayName || 'User');
-        const snap = await getDoc(doc(db, "users", user.uid));
-        if (snap.exists()) setEmoji(snap.data().emoji || '\u{1F427}');
-     }
-   });
+        const snap = await getDoc(doc(db, 'users', user.uid));
+        if (snap.exists()) {
+          const data = snap.data();
+          if (data.emoji) {
+            setEmoji(data.emoji);
+            localStorage.setItem('emoji', data.emoji);
+          }
+          if (data.name) {
+            setName(data.name);
+            localStorage.setItem('userName', data.name);
+          }
+        }
+      }
+    });
     return () => unsubscribe();
   }, []);
 
+  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (profileRef.current && !profileRef.current.contains(e.target)) {
-        setProfileOpen(false);
-      }
-      if (menuRef.current && !menuRef.current.contains(e.target)) {
-        setMenuOpen(false);
-      }
+      if (profileRef.current && !profileRef.current.contains(e.target)) setProfileOpen(false);
+      if (menuRef.current    && !menuRef.current.contains(e.target))    setMenuOpen(false);
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Track viewport width for sidebar visibility
+  useEffect(() => {
+    const handleResize = () => setIsDesktop(window.innerWidth >= 750);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const handleLogout = async () => {
-    const auth = getAuth();
-    await signOut(auth);
+    await signOut(getAuth());
     setProfileOpen(false);
     navigate('/');
   };
 
   const handleEmojiChange = async (newEmoji) => {
-    const auth = getAuth();
-    const db = getFirestore();
-    const user = auth.currentUser;
+    const user = getAuth().currentUser;
     if (!user) return;
     setEmoji(newEmoji);
-    await updateDoc(doc(db, "users", user.uid), { emoji: newEmoji });
+    localStorage.setItem('emoji', newEmoji);
+    await updateDoc(doc(getFirestore(), 'users', user.uid), { emoji: newEmoji });
   };
 
-
-  useEffect(() => {
-    const handleResize = () => {
-      setIsDesktop(window.innerWidth >= 750);
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
   return (
     <div className="dashboard">
+
+      {/* Hidden SVG gradient for the GraduationCap icon */}
+      <svg width="0" height="0" style={{ position: 'absolute' }}>
+        <defs>
+          <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%"   stopColor="#e67a5f" />
+            <stop offset="100%" stopColor="#ee9b85" />
+          </linearGradient>
+        </defs>
+      </svg>
 
       {/* ── Top Bar ── */}
       <header className="header">
 
-        {/* Hamburger button — only visible on mobile */}
+        {/* Hamburger — mobile only */}
         <div ref={menuRef} style={{ position: 'relative' }}>
           <button
             onClick={() => setMenuOpen(prev => !prev)}
+            className="hamburger-btn"
             style={{
               display: 'none',
               background: 'none',
@@ -99,12 +123,11 @@ export default function Layout({ children }) {
               color: '#2d2d2d',
               padding: '4px 8px',
             }}
-            className="hamburger-btn"
           >
             {menuOpen ? '✕' : '☰'}
           </button>
 
-          {/* Dropdown nav menu */}
+          {/* Mobile dropdown nav */}
           {menuOpen && (
             <div style={{
               position: 'absolute',
@@ -119,7 +142,7 @@ export default function Layout({ children }) {
               overflow: 'hidden',
               animation: 'fadeSlideIn 0.2s ease',
             }}>
-              {NAV_ITEMS.map(({ icon, label, path }) => (
+              {NAV_ITEMS.map(({ icon: Icon, label, path }) => (
                 <Link
                   key={label}
                   to={path}
@@ -130,15 +153,15 @@ export default function Layout({ children }) {
                     gap: '10px',
                     padding: '12px 18px',
                     textDecoration: 'none',
-                    color: location.pathname === path ? '#e67a5f' : '#2d2d2d',
-                    fontWeight: location.pathname === path ? '700' : '500',
+                    color:      location.pathname === path ? '#e67a5f' : '#2d2d2d',
+                    fontWeight: location.pathname === path ? '700'     : '500',
                     background: location.pathname === path ? '#fef6f4' : 'none',
                     fontSize: '14px',
                     borderBottom: '1px solid #fef0ec',
                     transition: 'background 0.2s',
                   }}
                 >
-                  <span>{icon}</span>
+                  <Icon size={16} />
                   <span>{label}</span>
                 </Link>
               ))}
@@ -146,11 +169,21 @@ export default function Layout({ children }) {
           )}
         </div>
 
-        {/* <div className="logo">📚 Smart Study Planner</div> */}
-        <div  style={{fontSize:'1.5rem', fontWeight:'800', background:'linear-gradient(135deg, #e67a5f, #ee9b85)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>
-          📚 Smart Study Planner
+        {/* Logo */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <GraduationCap size={28} stroke="url(#logoGrad)" />
+          <span style={{
+            fontSize: '1.5rem',
+            fontWeight: '800',
+            background: 'linear-gradient(135deg, #e67a5f, #ee9b85)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+          }}>
+            Smart Study Planner
+          </span>
         </div>
 
+        {/* Profile */}
         <div className="header-right">
           <div className="user-profile" ref={profileRef} style={{ position: 'relative' }}>
             <button
@@ -206,7 +239,7 @@ export default function Layout({ children }) {
                         style={{
                           fontSize: '18px',
                           background: emoji === e ? '#f0f0f0' : 'none',
-                          border: emoji === e ? '2px solid #ccc' : '2px solid transparent',
+                          border:     emoji === e ? '2px solid #ccc' : '2px solid transparent',
                           borderRadius: '6px', cursor: 'pointer', padding: '2px',
                         }}
                       >
@@ -219,31 +252,32 @@ export default function Layout({ children }) {
             )}
           </div>
         </div>
-      </header >
+      </header>
 
       <div className="w-full flex">
-        {/* Fixed Sidebar */}
-        <aside className="fixed top-0 left-0 w-64 md:block hidden  h-screen bg-white overflow-y-auto shadow-md md:block hidden" style={{ paddingTop: '120px' }}>
+        {/* Fixed Sidebar — desktop only */}
+        <aside
+          className="fixed top-0 left-0 h-screen bg-white overflow-y-auto shadow-md"
+          style={{ width: '16rem', paddingTop: '120px', display: isDesktop ? 'block' : 'none' }}
+        >
           <div>
-            {NAV_ITEMS.map(({ icon, label, path }) => (
+            {NAV_ITEMS.map(({ icon: Icon, label, path }) => (
               <Link
                 key={label}
                 to={path}
-                className={`nav-item ${location.pathname === path ? "active" : ""
-                  }`}
+                className={`nav-item ${location.pathname === path ? 'active' : ''}`}
               >
-                <span className="nav-icon">{icon}</span>
+                <span className="nav-icon"><Icon size={18} /></span>
                 <span>{label}</span>
               </Link>
             ))}
           </div>
         </aside>
 
-
         {/* Page Content */}
         <main
-          className="flex-1 min-w-0 min-h-screen p-8"
-          style={{ marginLeft: isDesktop ? '16rem' : '0' , padding:'2rem' }}
+          className="flex-1 min-w-0 min-h-screen"
+          style={{ marginLeft: isDesktop ? '16rem' : '0', padding: '2rem' }}
         >
           {children}
         </main>
@@ -256,12 +290,11 @@ export default function Layout({ children }) {
         }
         .profile-trigger:hover { background: rgba(0,0,0,0.05) !important; }
 
-        /* Show hamburger only on mobile */
         @media (max-width: 768px) {
           .hamburger-btn { display: block !important; }
           .user-name { display: none; }
         }
       `}</style>
-    </div >
+    </div>
   );
 }

@@ -1,18 +1,18 @@
+import React from "react";  
 import { useEffect, useState } from "react";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "./services/firebase";
 import "./ScheduleAndTasks.css";
 import "./WeeklyAvailability.css";
-import React from 'react';
 
 const defaultAvailability = [
-  { day: "Sunday",    slots: [{ startTime: "10:00", endTime: "18:00", available: true }] },
+  { day: "Sunday",    slots: [] },
   { day: "Monday",    slots: [] },
   { day: "Tuesday",   slots: [] },
   { day: "Wednesday", slots: [] },
   { day: "Thursday",  slots: [] },
-  { day: "Friday",    slots: [{ startTime: "16:00", endTime: "21:00", available: true }] },
+  { day: "Friday",    slots: [] },
   { day: "Saturday",  slots: [] },
 ];
 
@@ -44,11 +44,18 @@ function to12hDisplay(val) {
 function WeeklyAvailability() {
   const [availability, setAvailability]   = useState(defaultAvailability);
   const [selectedIndex, setSelectedIndex] = useState(null);
-  const [toast, setToast]                 = useState('');
+  const [toast, setToast]                 = useState({ message: '', type: 'success' });
+  const [uid, setUid]                     = useState(null);
+
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast({ message: '', type: 'success' }), 3000);
+  };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) return;
+      setUid(user.uid);
       const ref      = doc(db, "users", user.uid, "settings", "weeklyAvailability");
       const snapshot = await getDoc(ref);
       if (!snapshot.exists()) return;
@@ -56,9 +63,13 @@ function WeeklyAvailability() {
       const fixedData = (snapshot.data().availability || []).map((day) => ({
         day: day.day,
         slots: day.slots
-          ? day.slots.map((s) => ({ ...s, startTime: to24h(s.startTime), endTime: to24h(s.endTime) }))
+          ? day.slots.map((s) => ({
+              startTime: to24h(s.startTime),
+              endTime:   to24h(s.endTime),
+              available: true,
+            }))
           : day.startTime || day.endTime
-          ? [{ startTime: to24h(day.startTime || ""), endTime: to24h(day.endTime || ""), available: day.available ?? false }]
+          ? [{ startTime: to24h(day.startTime || ""), endTime: to24h(day.endTime || ""), available: true }]
           : [],
       }));
       setAvailability(fixedData);
@@ -66,74 +77,77 @@ function WeeklyAvailability() {
     return () => unsubscribe();
   }, []);
 
-  const hasAvailableSlot = (day) => (day.slots?.length || 0) > 0;
+  // Save to Firestore and show toast
+  const saveToFirestore = async (newAvailability) => {
+    if (!uid) return;
+    try {
+      const ref = doc(db, "users", uid, "settings", "weeklyAvailability");
+      await setDoc(ref, { availability: newAvailability, updatedAt: new Date().toISOString() });
+      showToast('✅ Availability saved!');
+    } catch (err) {
+      showToast('❌ Failed to save. Please try again.', 'error');
+    }
+  };
 
-  console.log("availability",availability);
-  
+  const hasAvailableSlot = (day) => day.slots?.length > 0;
 
   const formatSlots = (day) => {
     if (!day.slots?.length) return "No time slots selected";
     return day.slots
-      .map((s) => `${to12hDisplay(s.startTime)} – ${to12hDisplay(s.endTime)}${timeToMinutes(s.endTime) <= timeToMinutes(s.startTime) ? " (next day)" : ""}`)
+      .map((s) => `${to12hDisplay(s.startTime)} – ${to12hDisplay(s.endTime)}`)
       .join("  |  ");
   };
 
-  const validateDaySlots = (day) => {
+  const addSlot = () => {
+    const newAvailability = availability.map((day, i) =>
+      i === selectedIndex
+        ? { ...day, slots: [...(day.slots || []), { startTime: "", endTime: "", available: true }] }
+        : day
+    );
+    setAvailability(newAvailability);
+    // Don't auto-save yet — slot has no times yet
+  };
+
+  const updateSlot = (slotIndex, field, value) => {
+    const newAvailability = availability.map((day, di) =>
+      di === selectedIndex
+        ? { ...day, slots: day.slots.map((s, si) => (si === slotIndex ? { ...s, [field]: value } : s)) }
+        : day
+    );
+    setAvailability(newAvailability);
+
+    // Validate time order on the fly and show toast if invalid
+    const updatedSlot = newAvailability[selectedIndex].slots[slotIndex];
+    if (updatedSlot.startTime && updatedSlot.endTime) {
+      if (timeToMinutes(updatedSlot.startTime) >= timeToMinutes(updatedSlot.endTime)) {
+        showToast('❌ End time must be after start time.', 'error');
+      }
+    }
+  };
+
+  const deleteSlot = (slotIndex) => {
+    const newAvailability = availability.map((day, di) =>
+      di === selectedIndex
+        ? { ...day, slots: day.slots.filter((_, si) => si !== slotIndex) }
+        : day
+    );
+    setAvailability(newAvailability);
+  };
+
+  const closeModal = () => {
+    const day = availability[selectedIndex];
     for (const slot of day.slots || []) {
       if (!slot.startTime || !slot.endTime) {
-        alert(`Please fill both start and end time in ${day.day}.`);
-        return false;
+        showToast(`❌ Please fill both start and end time for ${day.day}.`, 'error');
+        return;
       }
-      if (slot.startTime === slot.endTime) {
-        alert(`Start and end time cannot be the same in ${day.day}.`);
-        return false;
+      if (timeToMinutes(slot.startTime) >= timeToMinutes(slot.endTime)) {
+        showToast(`❌ End time must be after start time in ${day.day}.`, 'error');
+        return;
       }
     }
-    return true;
-  };
-
-  const addSlot = () =>
-    setAvailability((prev) =>
-      prev.map((day, i) =>
-        i === selectedIndex
-          ? { ...day, slots: [...(day.slots || []), { startTime: "", endTime: "", available: true }] }
-          : day
-      )
-    );
-
-  const updateSlot = (slotIndex, field, value) =>
-    setAvailability((prev) =>
-      prev.map((day, di) =>
-        di === selectedIndex
-          ? { ...day, slots: day.slots.map((s, si) => (si === slotIndex ? { ...s, [field]: value } : s)) }
-          : day
-      )
-    );
-
-  const deleteSlot = (slotIndex) =>
-    setAvailability((prev) =>
-      prev.map((day, di) =>
-        di === selectedIndex
-          ? { ...day, slots: day.slots.filter((_, si) => si !== slotIndex) }
-          : day
-      )
-    );
-
-  const closeModalWithValidation = () => {
-    if (!validateDaySlots(availability[selectedIndex])) return;
+    saveToFirestore(availability);
     setSelectedIndex(null);
-  };
-
-  const saveAvailability = async () => {
-    const user = auth.currentUser;
-    if (!user) return alert("Please sign in first.");
-    for (const day of availability) {
-      if (!validateDaySlots(day)) return;
-    }
-    const ref = doc(db, "users", user.uid, "settings", "weeklyAvailability");
-    await setDoc(ref, { availability, updatedAt: new Date().toISOString() });
-    setToast('✅ Availability saved successfully!');
-    setTimeout(() => setToast(''), 3000);
   };
 
   return (
@@ -141,9 +155,6 @@ function WeeklyAvailability() {
 
       <div className="schedule-header">
         <h1 className="schedule-title">Weekly Availability</h1>
-        <button className="add-session-button" onClick={saveAvailability}>
-          Save Availability
-        </button>
       </div>
 
       <div className="wa-grid">
@@ -169,7 +180,7 @@ function WeeklyAvailability() {
             <h2 className="modal-title">Edit {availability[selectedIndex].day}</h2>
 
             {!(availability[selectedIndex].slots?.length) && (
-              <p className="wa-empty-slot">No time slots yet.</p>
+              <p className="wa-empty-slot">No time slots yet. Add one below.</p>
             )}
 
             {(availability[selectedIndex].slots || []).map((slot, slotIndex) => (
@@ -177,11 +188,22 @@ function WeeklyAvailability() {
                 <div className="modal-row">
                   <div className="modal-col">
                     <label className="modal-label">Start Time <span className="modal-required">*</span></label>
-                    <input className="modal-input" type="time" value={slot.startTime} onChange={(e) => updateSlot(slotIndex, "startTime", e.target.value)} />
+                    <input
+                      className="modal-input"
+                      type="time"
+                      value={slot.startTime}
+                      onChange={(e) => updateSlot(slotIndex, "startTime", e.target.value)}
+                    />
                   </div>
                   <div className="modal-col">
                     <label className="modal-label">End Time <span className="modal-required">*</span></label>
-                    <input className="modal-input" type="time" value={slot.endTime} onChange={(e) => updateSlot(slotIndex, "endTime", e.target.value)} />
+                    <input
+                      className="modal-input"
+                      type="time"
+                      value={slot.endTime}
+                      min={slot.startTime || undefined}
+                      onChange={(e) => updateSlot(slotIndex, "endTime", e.target.value)}
+                    />
                   </div>
                 </div>
 
@@ -194,21 +216,20 @@ function WeeklyAvailability() {
             <button className="wa-add-slot-btn" onClick={addSlot}>+ Add Time Slot</button>
 
             <div className="modal-actions">
-              <button className="modal-cancel" onClick={() => setSelectedIndex(null)}>Cancel</button>
-              <button className="modal-save"   onClick={closeModalWithValidation}>Done</button>
+              <button className="modal-save" onClick={closeModal} style={{ flex: 1 }}>Done</button>
             </div>
           </div>
         </div>
       )}
 
       {/* Toast notification */}
-      {toast && (
+      {toast.message && (
         <div style={{
           position: 'fixed',
           bottom: '24px',
           left: '50%',
           transform: 'translateX(-50%)',
-          background: '#2d2d2d',
+          background: toast.type === 'error' ? '#c0392b' : '#2d2d2d',
           color: 'white',
           padding: '12px 24px',
           borderRadius: '12px',
@@ -216,9 +237,8 @@ function WeeklyAvailability() {
           fontWeight: '600',
           zIndex: 9999,
           boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
-          animation: 'fadeSlideIn 0.3s ease',
         }}>
-          {toast}
+          {toast.message}
         </div>
       )}
 
