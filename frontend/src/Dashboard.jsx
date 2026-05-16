@@ -7,7 +7,12 @@ import { fetchCourses } from './services/CourseService';
 import './Dashboard.css';
 import Chatbot from './Chatbot';
 import React from 'react';
+import { Clock, CheckCircle2, FileText, TrendingUp, MessageCircle } from "lucide-react"
 
+
+const DAYS       = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const DAY_LABELS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const TODAY      = DAYS[new Date().getDay()];
 
 export default function Dashboard() {
   const [todaySessions, setTodaySessions] = useState([]);
@@ -20,17 +25,14 @@ export default function Dashboard() {
   const [loading, setLoading]             = useState(true);
   const [uid, setUid]                     = useState(null);
 
-  const DAYS       = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  const DAY_LABELS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  const today      = DAYS[new Date().getDay()];
 
- 
+
 
   const loadData = async (userId) => {
     // 1. Sessions — using fetchAllSessions from SessionService
     const sessions = await fetchAllSessions(userId);
     setAllSessions(sessions);
-    setTodaySessions(sessions.filter(s => s.day === today));
+    setTodaySessions(sessions.filter(s => s.day === TODAY));
     setWeekSessions(sessions.filter(s => (s.weekOffset ?? 0) === 0));
 
     // 2. Tasks — using fetchAllTasks from TaskService
@@ -87,10 +89,10 @@ export default function Dashboard() {
   }, 0);
 
   const STATS = [
-    { icon: '⏱️', value: `${studyHours.toFixed(1)}h`, label: 'Study Hours This Week' },
-    { icon: '✓', value: `${allSessions.filter(s => s.status === 'completed').length}/${allSessions.length}`, label: 'Completed Sessions' },
-    { icon: '📝', value: deadlines.length, label: 'Upcoming Deadlines' },
-    { icon: '📈', value: `${completionRate}%`, label: 'Completion Rate' },
+    { icon: Clock, value: `${studyHours.toFixed(1)}h`, label: 'Study Hours This Week' },
+    { icon: CheckCircle2, value: `${allSessions.filter(s => s.status === 'completed').length}/${allSessions.length}`, label: 'Completed Sessions' },
+    { icon: FileText, value: deadlines.length, label: 'Upcoming Deadlines' },
+    { icon: TrendingUp, value: `${completionRate}%`, label: 'Completion Rate' },
   ];
 
   const getDueBadge = (dueDate) => {
@@ -134,16 +136,31 @@ export default function Dashboard() {
 
   return (
     <div  className='h-full'>
-      <button className="chatbot-fab" title="AI Assistant" onClick={() => setChatbotOpen(true)}>💬</button>
+      <button
+        className="chatbot-fab"
+        title="AI Assistant"
+        onClick={() => setChatbotOpen(true)}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: '52px',
+          height: '52px',
+          fontSize: 0,        /* hides any leftover text/emoji from CSS */
+          color: '#fff',      /* SVG inherits this as stroke colour */
+        }}
+      >
+        <MessageCircle size={24} />
+      </button>
       {chatbotOpen && <Chatbot onClose={() => setChatbotOpen(false)} />}
 
       <h1 className="page-title " >Welcome! 👋</h1>
       <p className="page-subtitle">Here is your study summary for today</p>
 
       <div className="stats-grid">
-        {STATS.map(({ icon, value, label }) => (
+        {STATS.map(({ icon: Icon, value, label }) => (
           <div key={label} className="stat-card">
-            <div className="stat-icon">{icon}</div>
+            <div className="stat-icon"><Icon size={22} /></div>
             <div className="stat-value">{value}</div>
             <div className="stat-label">{label}</div>
           </div>
