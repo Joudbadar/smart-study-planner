@@ -208,7 +208,7 @@ export default function StudySchedule() {
     }
   }, []);
 
-  // نظام فحص الجلسات وإرسال التنبيهات القادمة
+  
   useEffect(() => {
     if (loading || schedule.length === 0) return;
 

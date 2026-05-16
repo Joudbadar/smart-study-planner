@@ -9,8 +9,6 @@ import SignIn from './SignIn';
 import Dashboard from './Dashboard';
 import CourseManagement from './CourseManagement';
 import TrackCompletion from './TrackCompletion';
-//import WeeklyAvailability from './WeeklyAvailability';
-//import StudyPlan from './StudyPlan';
 import StudySchedule from './StudySchedule';      
 import TasksDeadlines from './TasksDeadlines';  
 

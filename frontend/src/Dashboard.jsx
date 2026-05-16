@@ -146,8 +146,8 @@ export default function Dashboard() {
           justifyContent: 'center',
           width: '52px',
           height: '52px',
-          fontSize: 0,        /* hides any leftover text/emoji from CSS */
-          color: '#fff',      /* SVG inherits this as stroke colour */
+          fontSize: 0,       
+          color: '#fff',      
         }}
       >
         <MessageCircle size={24} />

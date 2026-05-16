@@ -1,7 +1,7 @@
 .notification-bell-container {
   position: relative;
   display: inline-block;
-  direction: rtl; /* لتنسيق النصوص العربية داخل القائمة */
+  direction: rtl; 
 }
 
 .bell-button {
@@ -40,7 +40,7 @@
   padding: 2px;
 }
 
-/* القائمة المنسدلة */
+
 .bell-dropdown {
   position: absolute;
   top: 120%;
@@ -99,11 +99,11 @@
 }
 
 .notification-item.task {
-  border-right: 4px solid #ff9800; /* لون التنبيه للمهام */
+  border-right: 4px solid #ff9800; 
 }
 
 .notification-item.session {
-  border-right: 4px solid #e67a5f; /* لون التنبيه للجلسات */
+  border-right: 4px solid #e67a5f; 
 }
 
 .item-header {
@@ -131,7 +131,6 @@
   line-height: 1.4;
 }
 
-/* حالة القائمة الفارغة */
 .empty-notifications {
   padding: 30px 16px;
   text-align: center;
@@ -149,7 +148,7 @@
   font-size: 13px;
 }
 
-/* إنيميشن نبض شارة الجرس */
+
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(-10px); }
   to { opacity: 1; transform: translateY(0); }

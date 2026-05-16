@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { fetchAllTasks } from './services/TaskService';
 import { fetchAllSessions } from './services/SessionService';
-import { Bell } from 'lucide-react'; // استيراد الأيقونة من لوسيد
+import { Bell } from 'lucide-react'; 
 import './NotificationBell.css';
 
 export default function NotificationBell() {
@@ -118,7 +118,7 @@ export default function NotificationBell() {
   return (
     <div className="notification-bell-container" ref={dropdownRef}>
       <button className="bell-button" onClick={() => setShowDropdown(!showDropdown)}>
-        {/* استخدام أيقونة لوسيد هنا */}
+       
         <Bell size={20} className="lucide-bell-icon" />
         
         {unreadCount > 0 && (

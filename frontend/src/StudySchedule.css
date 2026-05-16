@@ -1,9 +1,4 @@
-/* StudySchedule.css
-   Styles specific to the time-grid Study Schedule view.
-   Base layout, modals, week-nav, stats, and buttons come from ScheduleAndTasks.css.
-*/
 
-/* ── Availability grid toggle buttons ── */
 .ss-avail-slot {
   height: 28px;
   border-radius: 6px;
