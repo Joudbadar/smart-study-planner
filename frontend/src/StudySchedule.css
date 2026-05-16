@@ -345,3 +345,160 @@
     font-size: 12px;
   }
 }
+
+.study-schedule-wrapper {
+  padding: 20px;
+  max-width: 1300px;
+  margin: 0 auto;
+}
+
+.schedule-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.schedule-title {
+  font-size: 28px;
+  font-weight: 800;
+  color: #2d2d2d;
+}
+
+.add-session-button {
+  background: linear-gradient(135deg, #e67a5f, #ee9b85);
+  color: white;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.week-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: white;
+  border-radius: 12px;
+  padding: 12px 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+}
+
+.week-nav-btn {
+  background: linear-gradient(135deg, #e67a5f, #ee9b85);
+  color: white;
+  border: none;
+  padding: 7px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.week-nav-label {
+  font-weight: 700;
+  font-size: 15px;
+  color: #2d2d2d;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.week-nav-dates {
+  font-size: 11px;
+  font-weight: 400;
+  color: #999;
+}
+
+.statistics-container {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.statistic-card {
+  background: white;
+  padding: 16px 24px;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+  flex: 1;
+}
+
+.statistic-number {
+  font-size: 28px;
+  font-weight: 800;
+  color: #e67a5f;
+}
+
+.statistic-label {
+  font-size: 13px;
+  color: #888;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  padding: 16px;
+}
+
+.modal-card {
+  background: white;
+  border-radius: 20px;
+  padding: 28px;
+  width: 100%;
+  max-width: 440px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+}
+
+.modal-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: #2d2d2d;
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.modal-cancel {
+  flex: 1;
+  padding: 11px;
+  border: none;
+  border-radius: 12px;
+  background: #f0f0f0;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: #888;
+}
+
+.modal-save {
+  flex: 2;
+  padding: 11px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #e67a5f, #ee9b85);
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 14px;
+}
+
