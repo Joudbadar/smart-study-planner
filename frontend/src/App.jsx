@@ -18,12 +18,12 @@ function App() {
   return (
     <Router>
       <Routes>
-        {/* الصفحات العامة (بدون القالب الداخلي للموقع) */}
+      
         <Route path="/" element={<WelcomePage />} />
         <Route path="/create-account" element={<CreateAccount />} />
         <Route path="/signin" element={<SignIn />} />
 
-        {/* الصفحات الداخلية للمستخدم (محمية ومغلفة بالـ Layout) */}
+     
         <Route
           path="/dashboard"
           element={
@@ -51,7 +51,7 @@ function App() {
           }
         />
       
-        
+       
 
         <Route
           path="/study-plan"

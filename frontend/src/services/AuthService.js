@@ -22,6 +22,7 @@ export async function signUp({ fullName, email, password }) {
     email: email,
     createdAt: new Date().toISOString(),
     role: "student",
+    
   });
 
   return user;
@@ -35,6 +36,7 @@ export async function signIn({ email, password }) {
   const user = userCredential.user;
   console.log("dataUser : ", user );
   localStorage.setItem("userName", user.displayName);
+  
 
   if (!user.emailVerified) {
     await signOut(auth);
