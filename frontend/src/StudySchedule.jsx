@@ -130,7 +130,6 @@ function scheduleTasks(pendingTasks, availability, existingSessions, weeksAhead 
         if (dateStr < today) continue;
         if (task.dueDate && dateStr > task.dueDate) continue;
 
-        // ✅ FIX: sort slots by start time so earliest slot is always scheduled first
         const sortedSlots = [...availDay.slots]
           .filter(s => s.available)
           .sort((a, b) => timeToMin(a.startTime) - timeToMin(b.startTime));
@@ -199,6 +198,7 @@ export default function StudySchedule() {
   const scheduleRef        = useRef([]);
   const availabilityRef    = useRef(buildDefaultAvailability());
   const uidRef             = useRef(null);
+  const isGeneratingRef    = useRef(false);
 
   const db = getFirestore();
 
@@ -256,14 +256,35 @@ export default function StudySchedule() {
     return () => unsub();
   }, []);
 
-  // Load sessions
+  
   useEffect(() => {
     if (!authResolved || !uid) return;
-    let cancelled = false;
-    fetchAllSessions(uid).then(data => {
-      if (!cancelled) { setSchedule(data); setLoading(false); }
-    }).catch(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
+    
+    const fetchInitialData = async () => {
+      try {
+        const data = await fetchAllSessions(uid);
+        const allTasks = await fetchAllTasks(uid);
+        const pendingTasks = allTasks.filter(t => !t.completed);
+
+        setSchedule(data);
+        scheduleRef.current = data;
+        setLoading(false);
+
+        
+        const totalScheduledTaskIds = new Set(data.map(s => s.taskId));
+        const hasUnscheduledTasks = pendingTasks.some(t => !totalScheduledTaskIds.has(t.id));
+
+        if (hasUnscheduledTasks && !isGeneratingRef.current) {
+          console.log("Initial load detected unscheduled tasks, auto-generating...");
+          await generateFullPlan();
+        }
+      } catch (err) {
+        console.error("Error in fetching data:", err);
+        setLoading(false);
+      }
+    };
+
+    fetchInitialData();
   }, [uid, authResolved]);
 
   // Load availability
@@ -278,7 +299,7 @@ export default function StudySchedule() {
         }));
       }
     });
-  }, [uid]);
+  }, [uid, db]);
 
   // Auto-reschedule missed sessions
   useEffect(() => {
@@ -315,7 +336,9 @@ export default function StudySchedule() {
 
   const generateFullPlan = async () => {
     const currentUid = uidRef.current;
-    if (!currentUid) return;
+    if (!currentUid || isGeneratingRef.current) return;
+    
+    isGeneratingRef.current = true;
     setGenerating(true);
     setGenerateMsg('');
 
@@ -325,10 +348,14 @@ export default function StudySchedule() {
 
       if (availDays.length === 0) {
         setGenerateMsg('⚠️ No available days found. Update your Weekly Availability first.');
+        isGeneratingRef.current = false;
+        setGenerating(false);
         return;
       }
       if (tasks.length === 0) {
         setGenerateMsg('⚠️ No pending tasks found. Add tasks in Tasks & Deadlines first.');
+        isGeneratingRef.current = false;
+        setGenerating(false);
         return;
       }
 
@@ -344,6 +371,8 @@ export default function StudySchedule() {
 
       if (planned.length === 0) {
         setGenerateMsg('⚠️ No free slots found in your availability. Try updating your Weekly Availability.');
+        isGeneratingRef.current = false;
+        setGenerating(false);
         return;
       }
 
@@ -363,11 +392,12 @@ export default function StudySchedule() {
         scheduleRef.current = updated;
         return updated;
       });
-      setGenerateMsg(`✅ Scheduled ${saved.length} session(s) across ${[...new Set(planned.map(p => p.date))].length} day(s).`);
+      setGenerateMsg(`✅ Auto-Scheduled ${saved.length} session(s) successfully!`);
     } catch (err) {
       console.error('Generate error:', err);
-      setGenerateMsg('❌ Something went wrong. Please try again.');
+      setGenerateMsg('❌ Something went wrong during auto-generation.');
     } finally {
+      isGeneratingRef.current = false;
       setGenerating(false);
     }
   };
@@ -471,7 +501,7 @@ export default function StudySchedule() {
     if (!currentUid) return;
     setSavingAvail(true);
     try {
-      await setDoc(doc(db, 'users', currentUid, 'settings', 'weeklyAvailability'), {
+      await setDoc(doc(doc(db, 'users', currentUid), 'settings', 'weeklyAvailability'), {
         availability, updatedAt: new Date().toISOString(),
       });
       availabilityRef.current = availability;
@@ -605,7 +635,6 @@ export default function StudySchedule() {
             backgroundClip: 'text',
             display: 'inline-block',
           }}>Study Schedule</h1>
-         
         </div>
         <div className="schedule-header-actions" style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
           {rescheduling && <span style={{ fontSize: '13px', color: '#888' }}>⏳ Rescheduling...</span>}
@@ -613,10 +642,7 @@ export default function StudySchedule() {
             onClick={() => setShowAvailability(v => !v)}>
             {showAvailability ? 'Hide' : 'Edit'} Availability
           </button>
-          <button className="add-session-button" onClick={() => generateFullPlan()} disabled={generating}
-            style={{ background: 'linear-gradient(135deg, #e67a5f, #ee9b85)', opacity: generating ? 0.7 : 1 }}>
-            {generating ? ' Generating...' : ' Generate Plan'}
-          </button>
+          
         </div>
       </div>
 
@@ -781,7 +807,6 @@ export default function StudySchedule() {
                                     onClick={() => openConfirm('delete', session)}>🗑</button>
                                 </div>
                               )}
-
                             </div>
                           );
                         })}
