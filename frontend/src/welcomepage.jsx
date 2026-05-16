@@ -1,15 +1,28 @@
 import React from 'react';
 import './WelcomePage.css';
 import { Link } from 'react-router-dom';
+import { GraduationCap } from "lucide-react";
 
 export default function WelcomePage() {
   return (
     <div className="welcome-container">
 
-      
+      {/* Hidden SVG gradient for the logo */}
+      <svg width="0" height="0" style={{ position: 'absolute' }}>
+        <defs>
+          <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#E89B8E" />
+            <stop offset="100%" stopColor="#E07856" />
+          </linearGradient>
+        </defs>
+      </svg>
+
       <header>
         <nav className="navbar">
-          <div className="logo">📚 Smart Study Planner</div>
+          <div className="logo">
+            <GraduationCap size={32} stroke="url(#logoGrad)" />
+            <span>Smart Study Planner</span>
+          </div>
           <div className="nav-links">
             <a href="#features" className="nav-link">Features</a>
             <Link to="/create-account" className="btn btn-secondary">Sign Up</Link>
@@ -18,7 +31,6 @@ export default function WelcomePage() {
         </nav>
       </header>
 
-      
       <main>
 
         {/* Hero Section */}
@@ -29,7 +41,6 @@ export default function WelcomePage() {
               Transform your study routine with smart scheduling, personalized plans, and progress tracking. 
               Stay organized, meet deadlines, and achieve your academic goals effortlessly.
             </p>
-           
           </div>
 
           <div className="hero-visual">
@@ -143,17 +154,18 @@ export default function WelcomePage() {
           </p>
           <div className="cta-buttons">
             <Link to="/create-account" className="btn btn-white">Get Started</Link>
-         
           </div>
         </section>
 
       </main>
 
-     
       <footer className="footer">
         <div className="footer-content">
           <div className="footer-section">
-            <h4>📚 Smart Study Planner</h4>
+            <h4 style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+              <GraduationCap size={20} color="#fff" />
+              Smart Study Planner
+            </h4>
             <p style={{color: 'rgba(255, 255, 255, 0.7)', marginTop: '12px', maxWidth: '300px'}}>
               Empowering students to achieve their academic goals through intelligent planning.
             </p>

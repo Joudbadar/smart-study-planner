@@ -66,9 +66,15 @@
 }
 
 .logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   font-family: 'Outfit', sans-serif;
   font-size: 28px;
   font-weight: 800;
+}
+
+.logo span {
   background: linear-gradient(135deg, var(--coral-primary) 0%, var(--orange-accent) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
