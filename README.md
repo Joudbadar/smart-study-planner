@@ -1,16 +1,67 @@
-# React + Vite
+# Smart Study Planner
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Smart study planner is a we app that helps students organize they study schedule. it allows students to add their courses and tasks and generates a study plan according to the tasks with the highest priorities and shorter due dates. the app also has reminders to remind the students of their upcoming study sessions and progress tracking.
 
-Currently, two official plugins are available:
+## Tech Stack
+- React 18 + Vite
+- React Router v6 
+- Tailwind CSS + External CSS 
+- Firebase Auth + Firestore + Hosting 
+- Groq API (Llama 3.3 70B) 
+- Lucide React 
+- JavaScript (ES6+) 
+- Git & GitHub 
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Project Structure
+smart-study-planner/
+├── frontend/
+│   ├── public/
+│   ├── src/
+│   │   ├── assets/
+│   │   ├── services/
+│   │   ├── App.jsx
+│   │   ├── Chatbot.jsx
+│   │   ├── CourseManagement.jsx
+│   │   ├── Dashboard.jsx
+│   │   ├── Layout.jsx
+│   │   ├── NotificationBell.jsx
+│   │   ├── SignIn.jsx
+│   │   ├── CreateAccount.jsx
+│   │   ├── StudySchedule.jsx
+│   │   ├── TasksDeadlines.jsx
+│   │   ├── TrackCompletion.jsx
+│   │   └── welcomepage.jsx
+│   ├── .env
+│   ├── index.html
+│   ├── package.json
+│   └── vite.config.js
+├── .firebaserc
+├── firebase.json
+└── README.md
 
-## React Compiler
+## Prerequisites
+- Node.js v18+
+- npm
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Getting Started
+1. Extract the source code folder
+2. cd smart-study-planner/frontend
+3. npm install
+4. Create a .env file (see Environment Variables below)
+5. npm run dev → http://localhost:5173
 
-## Expanding the ESLint configuration
+## Environment Variables
+Create a `.env` file inside the `frontend/` folder:
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+VITE_GROQ_API_KEY=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
+
+## Features
+- Sign up / sign in with email verification
+- Add and manage courses from a dedicated courses page
+- Add tasks linked to a course with priorities and deadlines from a dedicated tasks page
+- Set weekly availability and generate a personalized study plan
+- Mark sessions as missed → automatically rescheduled
+- Mark sessions as completed → statistics update
+- Deadline and study session reminders
+- Progress page with completion tracking, study streaks, and tips
+- AI Study Advisor chatbot powered by Groq (Llama 3.3 70B)
