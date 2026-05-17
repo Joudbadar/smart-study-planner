@@ -53,7 +53,7 @@ smart-study-planner/
 ## Environment Variables
 Create a `.env` file inside the `frontend/` folder:
 
-VITE_GROQ_API_KEY=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
+VITE_GROQ_API_KEY=your api key
 
 ## Features
 - Sign up / sign in with email verification
